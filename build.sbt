@@ -1,4 +1,4 @@
-name := "skeletor"
+name := "skeletorrent"
 
 version := "0.1"
 
