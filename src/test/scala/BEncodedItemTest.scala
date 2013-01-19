@@ -38,8 +38,13 @@ class BEncodedItemTest extends FunSuite with BeforeAndAfter {
     expectResult(7) { new BEncodedInt(12345).encodedLength }
   }
 
-  test("decodeInteger encodedLength works with a negative number") {
+  test("BEncodeInt encodedLength works with a negative number") {
     expectResult(5) { new BEncodedInt(-25).encodedLength }
+  }
+
+  test("BEncodeInt implicit adding works") {
+    val f = fixture
+    expectResult(3) { 2 + f.int_a }
   }
 
   test("BEncodedString encodedLength works") {
@@ -56,6 +61,11 @@ class BEncodedItemTest extends FunSuite with BeforeAndAfter {
     val f = fixture
     assert(f.str_a.hashCode.equals(f.str_b.hashCode))
     assert(! f.str_a.hashCode.equals(f.str_c.hashCode))
+  }
+
+  test("BEncodedString implicit length check works") {
+    val f = fixture
+    expectResult(1) { f.str_a.length }
   }
 
   test("BEncodedList equals method works") {
@@ -75,6 +85,11 @@ class BEncodedItemTest extends FunSuite with BeforeAndAfter {
     expectResult(8) { f.list_a.encodedLength }
   }
 
+  test("BEncodedList implicit size check works") {
+    val f = fixture
+    expectResult(2) { f.list_a.size }
+  }
+
   test("BEncodedMap equals method works") {
     val f = fixture
     assert(f.map_a.equals(f.map_b))
@@ -90,5 +105,10 @@ class BEncodedItemTest extends FunSuite with BeforeAndAfter {
   test("BEncodedMap encodedLength works") {
     val f = fixture
     expectResult(8) { f.map_a.encodedLength }
+  }
+
+  test("BEncodedMap implicit get works") {
+    val f = fixture
+    expectResult(f.str_a) { f.map_a.get(f.int_a).get }
   }
 }
