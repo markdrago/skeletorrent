@@ -1,5 +1,7 @@
 package main.scala
 
+import scala.language.implicitConversions
+
 abstract class BEncodedItem {
   def encodedLength: Int
   def value: Any
@@ -13,13 +15,16 @@ abstract class BEncodedItem {
   override def hashCode = value.hashCode
 }
 
-class BEncodedString(val value: String) extends BEncodedItem {
+class BEncodedString(val value: Seq[Byte]) extends BEncodedItem {
   def encodedLength: Int = {
     return value.length + value.length.toString.length + 1
   }
+
+  def asByteSeq = value
+  def asString = new String(value.toArray, "UTF-8")
 }
 object BEncodedString {
-  implicit def bencodedString_to_String(enc: BEncodedString): String = enc.value
+  implicit def bencodedString_to_String(enc: BEncodedString): String = enc.asString
 }
 
 class BEncodedInt(val value: Int) extends BEncodedItem {

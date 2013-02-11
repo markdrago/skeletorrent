@@ -1,5 +1,6 @@
 package test.scala
 
+import scala.language.reflectiveCalls
 import org.scalatest.{BeforeAndAfter, FunSuite}
 import main.scala._
 
@@ -11,9 +12,9 @@ class BEncodedItemTest extends FunSuite with BeforeAndAfter {
       val int_a = new BEncodedInt(1)
       val int_b = new BEncodedInt(1)
       val int_c = new BEncodedInt(2)
-      val str_a = new BEncodedString("a")
-      val str_b = new BEncodedString("a")
-      val str_c = new BEncodedString("b")
+      val str_a = new BEncodedString(Seq[Byte] (97))
+      val str_b = new BEncodedString(Seq[Byte] (97))
+      val str_c = new BEncodedString(Seq[Byte] (98))
       val list_a = new BEncodedList(List(int_a, str_a))
       val list_b = new BEncodedList(List(int_b, str_b))
       val list_c = new BEncodedList(List(int_c, str_c))
@@ -48,7 +49,13 @@ class BEncodedItemTest extends FunSuite with BeforeAndAfter {
   }
 
   test("BEncodedString encodedLength works") {
-    expectResult(7) { new BEncodedString("hello").encodedLength }
+    val encodedByteSequence = new BEncodedString(Seq[Byte] (104, 101, 108, 108, 111))
+    expectResult(7) { encodedByteSequence.encodedLength }
+  }
+
+  test("BEncodedString encodedLength works for multi-byte utf8 chars") {
+    val encodedByteSequence = new BEncodedString("lambda: λ".getBytes("UTF-8"))
+    expectResult(13) { encodedByteSequence.encodedLength }
   }
 
   test("BEncodedString equals method works") {
