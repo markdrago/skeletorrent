@@ -51,5 +51,11 @@ class BEncodedMap(val value: Map[BEncodedItem, BEncodedItem]) extends BEncodedIt
   }
 }
 object BEncodedMap {
-  implicit def bencodedMap_to_Map(enc: BEncodedMap): Map[BEncodedItem, BEncodedItem] = enc.value
+  implicit def bencodedMap_to_Map(enc: BEncodedMap): Map[String, BEncodedItem] = {
+    enc.value.map((item) => {
+      item._1 match {
+        case key:BEncodedString => (key.asString -> item._2)
+      }
+    })
+  }
 }

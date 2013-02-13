@@ -18,9 +18,9 @@ class BEncodedItemTest extends FunSuite with BeforeAndAfter {
       val list_a = new BEncodedList(List(int_a, str_a))
       val list_b = new BEncodedList(List(int_b, str_b))
       val list_c = new BEncodedList(List(int_c, str_c))
-      val map_a = new BEncodedMap(Map(int_a -> str_a))
-      val map_b = new BEncodedMap(Map(int_b -> str_b))
-      val map_c = new BEncodedMap(Map(int_c -> str_c))
+      val map_a = new BEncodedMap(Map(str_a -> str_a))
+      val map_b = new BEncodedMap(Map(str_b -> str_b))
+      val map_c = new BEncodedMap(Map(str_c -> str_c))
     }
 
   test("BEncodedInt equals method works") {
@@ -116,6 +116,6 @@ class BEncodedItemTest extends FunSuite with BeforeAndAfter {
 
   test("BEncodedMap implicit get works") {
     val f = fixture
-    expectResult(f.str_a) { f.map_a.get(f.int_a).get }
+    expectResult(f.str_a) { f.map_a.get(f.str_a).get }
   }
 }
