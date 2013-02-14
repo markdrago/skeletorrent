@@ -6,6 +6,16 @@ import main.scala._
 
 class MetaInfoTest extends FunSuite {
 
+  test("trackerURL returns trackerURL when present") {
+    val mi = MetaInfo(get_metainfo_file_contents)
+    expectResult("http://www.legaltorrents.com:7070/announce") { mi.trackerUrl.get }
+  }
+
+  test("trackerURL returns None when trackerURL is not present") {
+    val mi = MetaInfo("d1:a1:be".getBytes("UTF-8"))
+    expectResult(None) { mi.trackerUrl }
+  }
+
   //announce
   //info
     //name (single file is filename, multi-file is directory name)

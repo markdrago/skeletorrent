@@ -2,60 +2,33 @@ package main.scala
 
 import scala.language.implicitConversions
 
-abstract class BEncodedItem {
+/* inspired by the JsValue JSON stuff in the play framework */
+
+sealed trait BEncodedItem {
   def encodedLength: Int
-  def value: Any
-
-  override def equals(other: Any) : Boolean = {
-    other.isInstanceOf[BEncodedItem]
-    val otherItem = other.asInstanceOf[BEncodedItem]
-    value.equals(otherItem.value)
-  }
-
-  override def hashCode = value.hashCode
 }
 
-class BEncodedString(val value: Seq[Byte]) extends BEncodedItem {
-  def encodedLength: Int = {
-    return value.length + value.length.toString.length + 1
-  }
-
-  def asByteSeq = value
-  def asString = new String(value.toArray, "UTF-8")
+case class BEncodedString(val value: Seq[Byte]) extends BEncodedItem {
+  override def encodedLength: Int = value.length + value.length.toString.length + 1
+  override def toString = new String(value.toArray, "UTF-8")
 }
 object BEncodedString {
-  implicit def bencodedString_to_String(enc: BEncodedString): String = enc.asString
+  def fromString(str: String) = new BEncodedString(str.getBytes("UTF-8"))
 }
 
-class BEncodedInt(val value: Int) extends BEncodedItem {
-  def encodedLength: Int = {
-    return value.toString.length + 2
-  }
-}
-object BEncodedInt {
-  implicit def bencodedInt_to_Int(enc: BEncodedInt): Int = enc.value
+case class BEncodedInt(val value: Int) extends BEncodedItem {
+  override def encodedLength: Int = value.toString.length + 2
 }
 
-class BEncodedList(val value: List[BEncodedItem]) extends BEncodedItem {
-  def encodedLength: Int = {
-    return (2 /: value.map {e=>e.encodedLength}) {_+_}
-  }
-}
-object BEncodedList {
-  implicit def bencodedList_to_List(enc: BEncodedList): List[BEncodedItem] = enc.value
+case class BEncodedList(val value: List[BEncodedItem] = List()) extends BEncodedItem {
+  override def encodedLength: Int = (2 /: value.map {e=>e.encodedLength}) {_+_}
+  def apply(index: Int): BEncodedItem = value(index)
 }
 
-class BEncodedMap(val value: Map[BEncodedItem, BEncodedItem]) extends BEncodedItem {
-  def encodedLength: Int = {
-    return (2 /: value) ((acc, kv) => acc + kv._1.encodedLength + kv._2.encodedLength)
+case class BEncodedMap(val value: Map[String, BEncodedItem]) extends BEncodedItem {
+  override def encodedLength: Int = {
+    return (2 /: value) ((acc, kv) => acc + BEncodedString.fromString(kv._1).encodedLength + kv._2.encodedLength)
   }
-}
-object BEncodedMap {
-  implicit def bencodedMap_to_Map(enc: BEncodedMap): Map[String, BEncodedItem] = {
-    enc.value.map((item) => {
-      item._1 match {
-        case key:BEncodedString => (key.asString -> item._2)
-      }
-    })
-  }
+
+  def get(key: String): Option[BEncodedItem] = value.get(key)
 }

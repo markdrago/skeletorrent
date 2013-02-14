@@ -18,9 +18,9 @@ class BEncodedItemTest extends FunSuite with BeforeAndAfter {
       val list_a = new BEncodedList(List(int_a, str_a))
       val list_b = new BEncodedList(List(int_b, str_b))
       val list_c = new BEncodedList(List(int_c, str_c))
-      val map_a = new BEncodedMap(Map(str_a -> str_a))
-      val map_b = new BEncodedMap(Map(str_b -> str_b))
-      val map_c = new BEncodedMap(Map(str_c -> str_c))
+      val map_a = new BEncodedMap(Map("a" -> str_a))
+      val map_b = new BEncodedMap(Map("a" -> str_b))
+      val map_c = new BEncodedMap(Map("c" -> str_c))
     }
 
   test("BEncodedInt equals method works") {
@@ -41,11 +41,6 @@ class BEncodedItemTest extends FunSuite with BeforeAndAfter {
 
   test("BEncodeInt encodedLength works with a negative number") {
     expectResult(5) { new BEncodedInt(-25).encodedLength }
-  }
-
-  test("BEncodeInt implicit adding works") {
-    val f = fixture
-    expectResult(3) { 2 + f.int_a }
   }
 
   test("BEncodedString encodedLength works") {
@@ -70,11 +65,6 @@ class BEncodedItemTest extends FunSuite with BeforeAndAfter {
     assert(! f.str_a.hashCode.equals(f.str_c.hashCode))
   }
 
-  test("BEncodedString implicit length check works") {
-    val f = fixture
-    expectResult(1) { f.str_a.length }
-  }
-
   test("BEncodedList equals method works") {
     val f = fixture
     assert(f.list_a.equals(f.list_b))
@@ -92,9 +82,10 @@ class BEncodedItemTest extends FunSuite with BeforeAndAfter {
     expectResult(8) { f.list_a.encodedLength }
   }
 
-  test("BEncodedList implicit size check works") {
+  test("BEncodedList can have its elements retrieved") {
     val f = fixture
-    expectResult(2) { f.list_a.size }
+    expectResult(f.int_a) { f.list_a(0) }
+    expectResult(f.str_a) { f.list_a(1) }
   }
 
   test("BEncodedMap equals method works") {
@@ -114,8 +105,8 @@ class BEncodedItemTest extends FunSuite with BeforeAndAfter {
     expectResult(8) { f.map_a.encodedLength }
   }
 
-  test("BEncodedMap implicit get works") {
+  test("BEncodedMap get works") {
     val f = fixture
-    expectResult(f.str_a) { f.map_a.get(f.str_a).get }
+    expectResult(f.str_a) { f.map_a.get("a").get }
   }
 }

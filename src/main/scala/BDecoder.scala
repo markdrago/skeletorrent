@@ -8,8 +8,8 @@ class BDecoder {
    */
   def decodeString(encoded: Seq[Byte]): BEncodedString = {
     checkStringFormat(encoded)
-    val digits = encoded.takeWhile(byteIsDigit(_)).toArray
-    val len = Integer.valueOf(new String(digits))
+    val digits = encoded.takeWhile(byteIsDigit(_))
+    val len = Integer.valueOf(new String(digits.toArray, "UTF-8"))
     require(encoded.length >= digits.length + len + 1, "bencoded string is shorter than expected")
     new BEncodedString(encoded.slice(digits.length + 1, digits.length + len + 1))
   }
@@ -64,19 +64,25 @@ class BDecoder {
   /**
    * Decode a bencoded dictionary/map
    * @param encoded a bencoded dictionary
-   * @return a new BEncodedMap instance holding a Map[BEncodedItem, BEncodedItem]
+   * @return a new BEncodedMap instance holding a Map[String, BEncodedItem]
    */
   def decodeMap(encoded: Seq[Byte]): BEncodedMap = {
     require(encoded(0) == 'd'.toByte)
-    var accumulator:Map[BEncodedItem, BEncodedItem] = Map.empty
+    var accumulator:Map[String, BEncodedItem] = Map.empty
 
     var todecode = encoded.drop(1)
     while (todecode(0) != 'e'.toByte) {
       val key = decodeItem(todecode)
       todecode = todecode.drop(key.encodedLength)
+
+      key match {
+        case k:BEncodedString => ()
+        case _ => throw new IllegalArgumentException("BEncodedMaps must have strings for keys")
+      }
+
       val value = decodeItem(todecode)
       todecode = todecode.drop(value.encodedLength)
-      accumulator = accumulator + (key -> value)
+      accumulator = accumulator + (key.toString -> value)
     }
 
     new BEncodedMap(accumulator)
@@ -85,7 +91,7 @@ class BDecoder {
   /**
    * Decode a bencoded item
    * @param encoded a data structure which has been bencoded
-   * @return a tuple containing a new BEncodedItem and the remainder of the original encoded string
+   * @return a new BEncodedItem
    */
   def decodeItem(encoded: Seq[Byte]): BEncodedItem = {
     return encoded(0).toChar match {
