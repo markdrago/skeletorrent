@@ -6,6 +6,12 @@ import scala.language.implicitConversions
 
 sealed trait BEncodedItem {
   def encodedLength: Int
+  def get(key: String): Option[BEncodedItem] = {
+    throw new IllegalStateException("BEncodedItem is not a map: " + this.toString)
+  }
+  def toInt: Int = {
+    throw new IllegalStateException("BEncodedItem is not an integer: " + this.toString)
+  }
 }
 
 case class BEncodedString(val value: Seq[Byte]) extends BEncodedItem {
@@ -18,6 +24,7 @@ object BEncodedString {
 
 case class BEncodedInt(val value: Int) extends BEncodedItem {
   override def encodedLength: Int = value.toString.length + 2
+  override def toInt: Int = value
 }
 
 case class BEncodedList(val value: List[BEncodedItem] = List()) extends BEncodedItem {
@@ -30,5 +37,5 @@ case class BEncodedMap(val value: Map[String, BEncodedItem]) extends BEncodedIte
     return (2 /: value) ((acc, kv) => acc + BEncodedString.fromString(kv._1).encodedLength + kv._2.encodedLength)
   }
 
-  def get(key: String): Option[BEncodedItem] = value.get(key)
+  override def get(key: String): Option[BEncodedItem] = value.get(key)
 }

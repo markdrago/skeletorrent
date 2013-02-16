@@ -1,19 +1,82 @@
 package test.scala
 
 import org.scalatest.FunSuite
+import org.scalatest.matchers.ShouldMatchers
 import javax.xml.bind.DatatypeConverter
 import main.scala._
 
-class MetaInfoTest extends FunSuite {
+class MetaInfoTest extends FunSuite with ShouldMatchers {
 
-  test("trackerURL returns trackerURL when present") {
-    val mi = MetaInfo(get_metainfo_file_contents)
-    expectResult("http://www.legaltorrents.com:7070/announce") { mi.trackerUrl.get }
+  test("checkMetaInfoValidity returns error when announce element is not present") {
+    checkMetaInfoValidityForFailure("d1:a1:be", "announce")
   }
 
-  test("trackerURL returns None when trackerURL is not present") {
-    val mi = MetaInfo("d1:a1:be".getBytes("UTF-8"))
-    expectResult(None) { mi.trackerUrl }
+  test("checkMetaInfoValidity returns error when info element is not present") {
+    checkMetaInfoValidityForFailure("d8:announce1:be", "info")
+  }
+
+  test("checkMetaInfoValidity returns error when info element is not a map") {
+    checkMetaInfoValidityForFailure("d8:announce1:b4:infoi2ee", "info")
+  }
+
+  test("checkMetaInfoValidity returns error when info/name element is not present") {
+    checkMetaInfoValidityForFailure("d8:announce1:b4:infod1:a1:bee", "name")
+  }
+
+  test("checkMetaInfoValidity returns error when info/piece_length element is not present") {
+    checkMetaInfoValidityForFailure("d8:announce1:b4:infod4:name1:bee", "piece length")
+  }
+
+  test("checkMetaInfoValidity returns error when info/length element is not present") {
+    checkMetaInfoValidityForFailure("d8:announce1:b4:infod4:name1:b12:piece length1:cee", "length")
+  }
+
+  test("checkMetaInfoValidity returns error when info/pieces element is not present") {
+    checkMetaInfoValidityForFailure("d8:announce1:b4:infod4:name1:b12:piece lengthi12e6:lengthi123eee", "pieces")
+  }
+
+  test("checkMetaInfoValidity does not throw exception for a valid MetaInfo file") {
+    val dict = (new BDecoder).decodeMap(get_metainfo_file_contents)
+    MetaInfo.checkMetaInfoValidity(dict)
+  }
+
+  def checkMetaInfoValidityForFailure(input: String, expectedMissing: String) = {
+    val dict = (new BDecoder).decodeMap(input.getBytes("UTF-8"))
+    val caught = evaluating { MetaInfo.checkMetaInfoValidity(dict) } should produce [IllegalArgumentException]
+    caught.getMessage should include (expectedMissing)
+  }
+
+  test("MetaInfo contstructor will not allow creation of invalid MetaInfo file") {
+    val dict = (new BDecoder).decodeMap("d1:a1:be".getBytes("UTF-8"))
+    evaluating { new MetaInfo(dict) } should produce [IllegalArgumentException]
+  }
+
+  test("MetaInfo.apply will not allow creation of invalid MetaInfo file") {
+    evaluating { MetaInfo("d1:a1:be".getBytes("UTF-8")) } should produce [IllegalArgumentException]
+  }
+
+  test("MetaInfo.apply will not allow creation of MetaInfo file with non-map type") {
+    evaluating { MetaInfo("1:a".getBytes("UTF-8")) } should produce [IllegalArgumentException]
+  }
+
+  test("fileName returns fileName") {
+    MetaInfo(get_metainfo_file_contents).fileName should be ("freeculture.zip")
+  }
+
+  test("trackerUrl returns trackerUrl") {
+    MetaInfo(get_metainfo_file_contents).trackerUrl should be ("http://www.legaltorrents.com:7070/announce")
+  }
+
+  test("pieceLength returns piece length") {
+    MetaInfo(get_metainfo_file_contents).pieceLength should be (262144)
+  }
+
+  test("length returns length") {
+    MetaInfo(get_metainfo_file_contents).length should be (2133210)
+  }
+
+  test("pieces returns pieces as a list of byte sequences") {
+    MetaInfo(get_metainfo_file_contents).length should be (2133210)
   }
 
   //announce
