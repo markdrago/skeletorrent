@@ -9,7 +9,13 @@ class MetaInfo(val dict: BEncodedMap) {
   def fileName = infoMap.get("name").get.toString
   def pieceLength = infoMap.get("piece length").get.toInt
   def length = infoMap.get("length").get.toInt
-  def pieces = infoMap.get("pieces").get.toString
+  def pieces: List[Seq[Byte]] = {
+    val bytes = infoMap.get("pieces").get match {
+      case s:BEncodedString => s.value
+      case _ => throw new IllegalStateException("metainfo.info.pieces must be a BEncodedString")
+    }
+    bytes.grouped(20).toList
+  }
 }
 
 object MetaInfo {

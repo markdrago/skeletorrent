@@ -35,15 +35,15 @@ class MetaInfoTest extends FunSuite with ShouldMatchers {
     checkMetaInfoValidityForFailure("d8:announce1:b4:infod4:name1:b12:piece lengthi12e6:lengthi123eee", "pieces")
   }
 
-  test("checkMetaInfoValidity does not throw exception for a valid MetaInfo file") {
-    val dict = (new BDecoder).decodeMap(get_metainfo_file_contents)
-    MetaInfo.checkMetaInfoValidity(dict)
-  }
-
   def checkMetaInfoValidityForFailure(input: String, expectedMissing: String) = {
     val dict = (new BDecoder).decodeMap(input.getBytes("UTF-8"))
     val caught = evaluating { MetaInfo.checkMetaInfoValidity(dict) } should produce [IllegalArgumentException]
     caught.getMessage should include (expectedMissing)
+  }
+
+  test("checkMetaInfoValidity does not throw exception for a valid MetaInfo file") {
+    val dict = (new BDecoder).decodeMap(get_metainfo_file_contents)
+    MetaInfo.checkMetaInfoValidity(dict)
   }
 
   test("MetaInfo contstructor will not allow creation of invalid MetaInfo file") {
@@ -76,7 +76,8 @@ class MetaInfoTest extends FunSuite with ShouldMatchers {
   }
 
   test("pieces returns pieces as a list of byte sequences") {
-    MetaInfo(get_metainfo_file_contents).length should be (2133210)
+    val expected = get_individual_piece_md5sums
+    MetaInfo(get_metainfo_file_contents).pieces should be (expected)
   }
 
   //announce
@@ -98,12 +99,27 @@ class MetaInfoTest extends FunSuite with ShouldMatchers {
      */
     val encoded =
       "ZDg6YW5ub3VuY2U0MjpodHRwOi8vd3d3LmxlZ2FsdG9ycmVudHMuY29tOjcwNzAvYW5ub3VuY2Ux" +
-        "MzpjcmVhdGlvbiBkYXRlaTEwODEzMTIwODRlNDppbmZvZDY6bGVuZ3RoaTIxMzMyMTBlNDpuYW1l" +
-        "MTU6ZnJlZWN1bHR1cmUuemlwMTI6cGllY2UgbGVuZ3RoaTI2MjE0NGU2OnBpZWNlczE4MDrtiec4" +
-        "Sw00D6X/+hnRoA2I51S+AFBcbtsV0weqjkY4kfTSUw6N0TkKBHbzlzuhabVhAx7MQyh1GkwAlOHy" +
-        "MUlEH0osleKnyMGAS73zefOd3E5DVssVKnpLa8XMHJB5q9Hk98QiXmhc/GNWL4Gu1pEaD5LIMCbU" +
-        "2Gc8oiM0J8BrIMLO0Ca3uEkys8EmVdvvSeAFc3OsidBWJ1jzkaX33qtSst1ZrxLjRBuLU5P/jXbe" +
-        "a8GRD4RlZQ=="
+      "MzpjcmVhdGlvbiBkYXRlaTEwODEzMTIwODRlNDppbmZvZDY6bGVuZ3RoaTIxMzMyMTBlNDpuYW1l" +
+      "MTU6ZnJlZWN1bHR1cmUuemlwMTI6cGllY2UgbGVuZ3RoaTI2MjE0NGU2OnBpZWNlczE4MDrtiec4" +
+      "Sw00D6X/+hnRoA2I51S+AFBcbtsV0weqjkY4kfTSUw6N0TkKBHbzlzuhabVhAx7MQyh1GkwAlOHy" +
+      "MUlEH0osleKnyMGAS73zefOd3E5DVssVKnpLa8XMHJB5q9Hk98QiXmhc/GNWL4Gu1pEaD5LIMCbU" +
+      "2Gc8oiM0J8BrIMLO0Ca3uEkys8EmVdvvSeAFc3OsidBWJ1jzkaX33qtSst1ZrxLjRBuLU5P/jXbe" +
+      "a8GRD4RlZQ=="
     DatatypeConverter.parseBase64Binary(encoded)
+  }
+
+  def get_individual_piece_md5sums: List[Seq[Byte]] = {
+    val encoded = List(
+      "7YnnOEsNNA+l//oZ0aANiOdUvgA=",
+      "UFxu2xXTB6qORjiR9NJTDo3ROQo=",
+      "BHbzlzuhabVhAx7MQyh1GkwAlOE=",
+      "8jFJRB9KLJXip8jBgEu983nzndw=",
+      "TkNWyxUqektrxcwckHmr0eT3xCI=",
+      "Xmhc/GNWL4Gu1pEaD5LIMCbU2Gc=",
+      "PKIjNCfAayDCztAmt7hJMrPBJlU=",
+      "2+9J4AVzc6yJ0FYnWPORpffeq1I=",
+      "st1ZrxLjRBuLU5P/jXbea8GRD4Q="
+    )
+    return encoded.map(DatatypeConverter.parseBase64Binary(_).toSeq)
   }
 }
