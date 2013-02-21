@@ -1,10 +1,12 @@
 package test.scala
 
 import scala.language.reflectiveCalls
-import org.scalatest.{BeforeAndAfter, FunSuite}
+import org.scalatest.FunSuite
+import org.scalatest.matchers.ShouldMatchers
 import main.scala._
+import akka.util.ByteString
 
-class BEncodedItemTest extends FunSuite with BeforeAndAfter {
+class BEncodedItemTest extends FunSuite with ShouldMatchers {
 
   def fixture =
     new {
@@ -12,9 +14,9 @@ class BEncodedItemTest extends FunSuite with BeforeAndAfter {
       val int_a = new BEncodedInt(1)
       val int_b = new BEncodedInt(1)
       val int_c = new BEncodedInt(2)
-      val str_a = new BEncodedString(Seq[Byte] (97))
-      val str_b = new BEncodedString(Seq[Byte] (97))
-      val str_c = new BEncodedString(Seq[Byte] (98))
+      val str_a = BEncodedString.fromString("a")
+      val str_b = BEncodedString.fromString("a")
+      val str_c = BEncodedString.fromString("b")
       val list_a = new BEncodedList(List(int_a, str_a))
       val list_b = new BEncodedList(List(int_b, str_b))
       val list_c = new BEncodedList(List(int_c, str_c))
@@ -39,18 +41,32 @@ class BEncodedItemTest extends FunSuite with BeforeAndAfter {
     expectResult(7) { new BEncodedInt(12345).encodedLength }
   }
 
-  test("BEncodeInt encodedLength works with a negative number") {
+  test("BEncodedInt encodedLength works with a negative number") {
     expectResult(5) { new BEncodedInt(-25).encodedLength }
   }
 
+  test("BEncodedInt serialize works for positive number") {
+    verifyBEncodedIntProducesExpectedResultWhenSerialized(5, "i5e")
+  }
+
+  test("BEncodedInt serialize works for negative number") {
+    verifyBEncodedIntProducesExpectedResultWhenSerialized(-5, "i-5e")
+  }
+
+  test("BEncodedInt serialize works for zero") {
+    verifyBEncodedIntProducesExpectedResultWhenSerialized(0, "i0e")
+  }
+
+  def verifyBEncodedIntProducesExpectedResultWhenSerialized(input: Int, expected: String) = {
+    new BEncodedInt(input).serialize should be (ByteString(expected))
+  }
+
   test("BEncodedString encodedLength works") {
-    val encodedByteSequence = new BEncodedString(Seq[Byte] (104, 101, 108, 108, 111))
-    expectResult(7) { encodedByteSequence.encodedLength }
+    expectResult(7) { BEncodedString.fromString("hello").encodedLength }
   }
 
   test("BEncodedString encodedLength works for multi-byte utf8 chars") {
-    val encodedByteSequence = new BEncodedString("lambda: λ".getBytes("UTF-8"))
-    expectResult(13) { encodedByteSequence.encodedLength }
+    expectResult(13) { BEncodedString.fromString("lambda: λ").encodedLength }
   }
 
   test("BEncodedString equals method works") {
@@ -63,6 +79,18 @@ class BEncodedItemTest extends FunSuite with BeforeAndAfter {
     val f = fixture
     assert(f.str_a.hashCode.equals(f.str_b.hashCode))
     assert(! f.str_a.hashCode.equals(f.str_c.hashCode))
+  }
+
+  test("BEncodedString serialize works for regular string") {
+    verifyBEncodedStringProducesExpectedResultWhenSerialized("abc", 3)
+  }
+
+  test("BEncodedString serialize works for byte sequence w/ multi-byte UTF-8 char") {
+    verifyBEncodedStringProducesExpectedResultWhenSerialized("lambda: λ", 10)
+  }
+
+  def verifyBEncodedStringProducesExpectedResultWhenSerialized(input: String, len: Int) = {
+    BEncodedString.fromString(input).serialize should be (ByteString((len.toString + ":" + input)))
   }
 
   test("BEncodedList equals method works") {
@@ -88,6 +116,22 @@ class BEncodedItemTest extends FunSuite with BeforeAndAfter {
     expectResult(f.str_a) { f.list_a(1) }
   }
 
+  test("BEncodedList serialize works for a simple mixed list") {
+    val f = fixture
+    f.list_a.serialize should be (ByteString("li1e1:ae"))
+  }
+
+  test("BEncodedList serialize works for a nested list") {
+    val f = fixture
+    val l = new BEncodedList(List(f.int_c, f.list_a))
+    l.serialize should be (ByteString("li2eli1e1:aee"))
+  }
+
+  test("BEncodedList is mappable") {
+    val f = fixture
+    f.list_a.map(_.toString)
+  }
+
   test("BEncodedMap equals method works") {
     val f = fixture
     assert(f.map_a.equals(f.map_b))
@@ -108,5 +152,28 @@ class BEncodedItemTest extends FunSuite with BeforeAndAfter {
   test("BEncodedMap get works") {
     val f = fixture
     expectResult(f.str_a) { f.map_a.get("a").get }
+  }
+
+  test("BEncodedMap serialize works for a simple dictionary") {
+    val f = fixture
+    f.map_a.serialize should be (ByteString("d1:a1:ae"))
+  }
+
+  test("BEncodedMap serialize works for a nested dictionary") {
+    val f = fixture
+    val d = BEncodedMap(Map("A" -> f.map_c))
+    d.serialize should be (ByteString("d1:Ad1:c1:bee"))
+  }
+
+  test("BEncodedMap is mappable") {
+    val f = fixture
+    f.map_a.map(_.toString)
+  }
+
+  test("serialization succeeds for a highly nested structure") {
+    val f = fixture
+    val l = BEncodedList(List(f.int_a, f.str_a, f.map_a))
+    val d = BEncodedMap(Map("a" -> l, "b" -> f.list_a))
+    d.serialize should be (ByteString("d1:ali1e1:ad1:a1:aee1:bli1e1:aee"))
   }
 }
