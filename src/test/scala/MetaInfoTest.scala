@@ -7,163 +7,6 @@ import main.scala._
 import akka.util.ByteString
 
 class MetaInfoTest extends FunSuite with ShouldMatchers {
-
-  //both single & multifile
-  test("checkMetaInfoValidity throws when announce element is not present") {
-    checkMetaInfoValidityForMissingTopLevelElement("announce")
-  }
-
-  test("checkMetaInfoValidity throws when announce is not a string") {
-    val map = get_metainfo_map_for_single_file - "announce" + ("announce" -> 10)
-    checkMetaInfoValidityForFailure(map, "announce")
-  }
-
-  test("checkMetaInfoValidity throws when info element is not present") {
-    checkMetaInfoValidityForMissingTopLevelElement("info")
-  }
-
-  test("checkMetaInfoValidity throws when info element is not a map") {
-    val map = get_metainfo_map_for_single_file
-    val badMap = (map - "info") + ("info" -> "notamap")
-    checkMetaInfoValidityForFailure(badMap, "info")
-  }
-
-  test("checkMetaInfoValidity throws when info/name element is not present") {
-    checkMetaInfoValidityForMissingInfoElement("name")
-  }
-
-  test("checkMetaInfoValidity throws when name is not a string") {
-    val map = putInfoElement(get_metainfo_map_for_single_file, "name", 10)
-    checkMetaInfoValidityForFailure(map, "name")
-  }
-
-  test("checkMetaInfoValidity throws when info/piece length element is not present") {
-    checkMetaInfoValidityForMissingInfoElement("piece length")
-  }
-
-  test("checkMetaInfoValidity throws when piece length is not an int") {
-    val map = putInfoElement(get_metainfo_map_for_single_file, "piece length", "not an int")
-    checkMetaInfoValidityForFailure(map, "piece length")
-  }
-
-  test("checkMetaInfoValidity throws when info/pieces element is not present") {
-    checkMetaInfoValidityForMissingInfoElement("pieces")
-  }
-
-  test("checkMetaInfoValidity throws when pieces is not a string") {
-    val map = putInfoElement(get_metainfo_map_for_single_file, "pieces", 10)
-    checkMetaInfoValidityForFailure(map, "pieces")
-  }
-
-  //single file only
-  test("checkMetaInfoValidity throws when info/length element is not present") {
-    checkMetaInfoValidityForMissingInfoElement("length")
-  }
-
-  test("checkMetaInfoValidity throws when info/length is not an integer") {
-    val map = putInfoElement(get_metainfo_map_for_single_file, "length", "not an int")
-    checkMetaInfoValidityForFailure(map, "length")
-  }
-
-  //multi file only
-  test("checkMetaInfoValidity throws when info/files is not present for multifile metainfo") {
-    val map = get_metainfo_map_for_multi_file
-    val badMap = (map - "info") + ("info" -> (map.get("info").get.asInstanceOf[Map[String, Any]] - "files"))
-    checkMetaInfoValidityForFailure(badMap, "files")
-  }
-
-  test("checkMetaInfoValidity throws when info/files is not a list") {
-    val map = putInfoElement(get_metainfo_map_for_multi_file, "files", "not a list")
-    checkMetaInfoValidityForFailure(map, "files")
-  }
-
-  test("checkMetaInfoValidity throws when info/files list contains a non-dictionary") {
-    val map = get_metainfo_map_for_multi_file
-    val fileList = map.get("info").get.asInstanceOf[Map[String, Any]].get("files").get.asInstanceOf[List[Any]]
-    val bogusFileList = "not a dictionary" :: fileList
-    val bogusMap = putInfoElement(map, "files", bogusFileList)
-    checkMetaInfoValidityForFailure(bogusMap, "files")
-  }
-
-  test("checkMetaInfoValidity throws when info/files[X]/length is not present for multifile metainfo") {
-    val fileDict = Map("not_length" -> 100, "path" -> List("a", "b"))
-    val map = addFileDictToMultifileMetainfo(fileDict)
-    checkMetaInfoValidityForFailure(map, "length")
-  }
-
-  test("checkMetaInfoValidity throws when info/files[X]/length is not an integer for multifile metainfo") {
-    val fileDict = Map("length" -> "not an int", "path" -> List("a", "b"))
-    val map = addFileDictToMultifileMetainfo(fileDict)
-    checkMetaInfoValidityForFailure(map, "length")
-  }
-
-  test("checkMetaInfoValidity throws when info/files[X]/path is not present for multifile metainfo") {
-    val fileDict = Map("length" -> 100, "not_path" -> List("a", "b"))
-    val map = addFileDictToMultifileMetainfo(fileDict)
-    checkMetaInfoValidityForFailure(map, "path")
-  }
-
-  test("checkMetaInfoValidity throws when info/files[X]/path is not a list for multifile metainfo") {
-    val fileDict = Map("length" -> 100, "path" -> "not a list")
-    val map = addFileDictToMultifileMetainfo(fileDict)
-    checkMetaInfoValidityForFailure(map, "path")
-  }
-
-  test("checkMetaInfoValidity throws when info/files[X]/path is an empty list") {
-    val fileDict = Map("length" -> 100, "path" -> List())
-    val map = addFileDictToMultifileMetainfo(fileDict)
-    checkMetaInfoValidityForFailure(map, "path")
-  }
-
-  test("checkMetaInfoValidity throws when info/files[X]/path contains a non-string") {
-    val fileDict = Map("length" -> 100, "path" -> List("path1", 123))
-    val map = addFileDictToMultifileMetainfo(fileDict)
-    checkMetaInfoValidityForFailure(map, "path")
-  }
-
-  def addFileDictToMultifileMetainfo(fileDict: Map[String, Any]): Map[String, Any] = {
-    val map = get_metainfo_map_for_multi_file
-    val fileList = map.get("info").get.asInstanceOf[Map[String, Any]].get("files").get.asInstanceOf[List[Any]]
-    val newFileList = fileDict :: fileList
-    putInfoElement(map, "files", newFileList)
-  }
-
-  //appears to be both single & multifile
-  test("checkMetaInfoValidity throws when both length & files are present") {
-    val map = putInfoElement(get_metainfo_map_for_single_file, "files", "no matter")
-    checkMetaInfoValidityForFailure(map, "files")
-  }
-
-  def putInfoElement(map: Map[String, Any], key: String, value: Any) = {
-    (map - "info") + ("info" -> (map.get("info").get.asInstanceOf[Map[String, Any]] + (key -> value)))
-  }
-
-  def checkMetaInfoValidityForMissingTopLevelElement(missing: String) {
-    checkMetaInfoValidityForFailure(get_metainfo_map_for_single_file - missing, missing)
-  }
-
-  def checkMetaInfoValidityForMissingInfoElement(missing: String) {
-    val map = get_metainfo_map_for_single_file
-    val badMap = (map - "info") + ("info" -> (map.get("info").get.asInstanceOf[Map[String, Any]] - missing))
-    checkMetaInfoValidityForFailure(badMap, missing)
-  }
-
-  def checkMetaInfoValidityForFailure(input: Map[String, Any], expectedMissing: String) {
-    val dict = (new BEncoder).encodeMap(input)
-    val caught = evaluating { MetaInfoValidator.validate(dict) } should produce [IllegalArgumentException]
-    caught.getMessage should include (expectedMissing)
-  }
-
-  test("checkMetaInfoValidity does not throw exception for a valid single file MetaInfo file") {
-    val dict = (new BDecoder).decodeMap(get_metainfo_file_contents)
-    MetaInfoValidator.validate(dict)
-  }
-
-  test("checkMetaInfoValidity does not throw exception for a valid multifile MetaInfo file") {
-    val dict = (new BDecoder).decodeMap(get_metainfo_file_contents_multifile)
-    MetaInfoValidator.validate(dict)
-  }
-
   test("MetaInfo contstructor will not allow creation of invalid MetaInfo file") {
     val dict = (new BDecoder).decodeMap(ByteString("d1:a1:be"))
     evaluating { new MetaInfo(dict) } should produce [IllegalArgumentException]
@@ -179,44 +22,44 @@ class MetaInfoTest extends FunSuite with ShouldMatchers {
   }
 
   test("name returns name") {
-    MetaInfo(get_metainfo_file_contents).name should be ("freeculture.zip")
+    MetaInfo(MetaInfoTest.get_metainfo_file_contents).name should be ("freeculture.zip")
   }
 
   test("trackerUrl returns trackerUrl") {
-    MetaInfo(get_metainfo_file_contents).trackerUrl should be ("http://www.legaltorrents.com:7070/announce")
+    MetaInfo(MetaInfoTest.get_metainfo_file_contents).trackerUrl should be ("http://www.legaltorrents.com:7070/announce")
   }
 
   test("pieceLength returns piece length") {
-    MetaInfo(get_metainfo_file_contents).pieceLength should be (262144)
+    MetaInfo(MetaInfoTest.get_metainfo_file_contents).pieceLength should be (262144)
   }
 
   test("length returns length for single file metainfo") {
-    MetaInfo(get_metainfo_file_contents).length.get should be (2133210)
+    MetaInfo(MetaInfoTest.get_metainfo_file_contents).length.get should be (2133210)
   }
 
   test("length returns None for multi file metainfo") {
-    MetaInfo(get_metainfo_file_contents_multifile).length should be (None)
+    MetaInfo(MetaInfoTest.get_metainfo_file_contents_multifile).length should be (None)
   }
 
   test("pieces returns pieces as a list of byte sequences") {
-    val expected = get_individual_piece_sha1sums
-    MetaInfo(get_metainfo_file_contents).pieces should be (expected)
+    val expected = MetaInfoTest.get_individual_piece_sha1sums
+    MetaInfo(MetaInfoTest.get_metainfo_file_contents).pieces should be (expected)
   }
 
   test("isMultifile returns false for single file metainfo") {
-    MetaInfo(get_metainfo_file_contents).isMultifile should be (false)
+    MetaInfo(MetaInfoTest.get_metainfo_file_contents).isMultifile should be (false)
   }
 
   test("isMultifile returns true for multiple file metainfo") {
-    MetaInfo(get_metainfo_file_contents_multifile).isMultifile should be (true)
+    MetaInfo(MetaInfoTest.get_metainfo_file_contents_multifile).isMultifile should be (true)
   }
 
   test("files returns None for single file metainfo") {
-    MetaInfo(get_metainfo_file_contents).files should be (None)
+    MetaInfo(MetaInfoTest.get_metainfo_file_contents).files should be (None)
   }
 
   test("files returns list of MetaInfoFile objects for multi file metainfo") {
-    val files = MetaInfo(get_metainfo_file_contents_multifile).files.get
+    val files = MetaInfo(MetaInfoTest.get_metainfo_file_contents_multifile).files.get
     files.length should be (2)
     files(0).path should be ("111.txt")
     files(0).length should be (111)
@@ -229,7 +72,9 @@ class MetaInfoTest extends FunSuite with ShouldMatchers {
     val file = new MetaInfoFile(pathList, 123)
     file.path should be ("a/b")
   }
+}
 
+object MetaInfoTest {
   def get_metainfo_map_for_single_file: Map[String, Any] = {
     Map(
       "announce" -> "http://www.legaltorrents.com:7070/announce",
