@@ -1,6 +1,8 @@
 package main.scala
 
 import akka.util.ByteString
+import java.security.MessageDigest
+import org.apache.commons.codec.net.URLCodec
 
 class MetaInfo(val dict: BEncodedMap) {
   MetaInfoValidator.validate(dict)
@@ -32,6 +34,14 @@ class MetaInfo(val dict: BEncodedMap) {
         new MetaInfoFile(dict.get("path").get.asInstanceOf[BEncodedList], dict.get("length").get.toInt)
       }).toList
     )
+  }
+
+  def infoHash: ByteString = {
+    ByteString(MessageDigest.getInstance("SHA-1").digest(infoMap.serialize.toArray))
+  }
+
+  def encodedInfoHash: String = {
+    new String((new URLCodec("UTF-8")).encode(infoHash.toArray))
   }
 }
 

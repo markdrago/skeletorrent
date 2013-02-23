@@ -5,6 +5,7 @@ import org.scalatest.matchers.ShouldMatchers
 import javax.xml.bind.DatatypeConverter
 import main.scala._
 import akka.util.ByteString
+import org.apache.commons.codec.binary.Base64
 
 class MetaInfoTest extends FunSuite with ShouldMatchers {
   test("MetaInfo contstructor will not allow creation of invalid MetaInfo file") {
@@ -71,6 +72,16 @@ class MetaInfoTest extends FunSuite with ShouldMatchers {
     val pathList = (new BEncoder).encodeList(List("a", "b")).asInstanceOf[BEncodedList]
     val file = new MetaInfoFile(pathList, 123)
     file.path should be ("a/b")
+  }
+
+  test("infoHash can be calculated") {
+    val expected = ByteString(DatatypeConverter.parseBase64Binary("ymrEu9lx05ApNdvPwtPqJbQopUc="))
+    MetaInfo(MetaInfoTest.get_metainfo_file_contents).infoHash should be (expected)
+  }
+
+  test("encodedInfoHash can be calculated") {
+    val expected = "%CAj%C4%BB%D9q%D3%90%295%DB%CF%C2%D3%EA%25%B4%28%A5G"
+    MetaInfo(MetaInfoTest.get_metainfo_file_contents).encodedInfoHash should be (expected)
   }
 }
 
