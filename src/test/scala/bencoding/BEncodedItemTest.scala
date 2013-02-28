@@ -3,9 +3,7 @@ package bencoding
 import scala.language.reflectiveCalls
 import org.scalatest.FunSuite
 import org.scalatest.matchers.ShouldMatchers
-import main.scala._
 import akka.util.ByteString
-import bencoding.{BEncodedMap, BEncodedList, BEncodedInt, BEncodedString}
 
 class BEncodedItemTest extends FunSuite with ShouldMatchers {
 

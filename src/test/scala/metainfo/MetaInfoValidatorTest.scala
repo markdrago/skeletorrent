@@ -3,7 +3,6 @@ package metainfo
 import org.scalatest.FunSuite
 import org.scalatest.matchers.ShouldMatchers
 import bencoding.{BEncoder, BDecoder}
-import metainfo.{MetaInfoTest, MetaInfoValidator}
 
 class MetaInfoValidatorTest extends FunSuite with ShouldMatchers {
 

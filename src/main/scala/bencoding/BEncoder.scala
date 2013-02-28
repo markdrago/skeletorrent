@@ -1,9 +1,6 @@
 package bencoding
 
 import akka.util.ByteString
-import bencoding._
-import bencoding.BEncodedInt
-import bencoding.BEncodedList
 
 class BEncoder {
   def encodeList(list: Seq[Any]): BEncodedItem = {

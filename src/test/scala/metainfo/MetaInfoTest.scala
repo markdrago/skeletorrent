@@ -3,11 +3,8 @@ package metainfo
 import org.scalatest.FunSuite
 import org.scalatest.matchers.ShouldMatchers
 import javax.xml.bind.DatatypeConverter
-import main.scala._
 import akka.util.ByteString
-import org.apache.commons.codec.binary.Base64
 import bencoding.{BEncoder, BEncodedList, BDecoder}
-import metainfo.{MetaInfoFile, MetaInfo}
 
 class MetaInfoTest extends FunSuite with ShouldMatchers {
   test("MetaInfo contstructor will not allow creation of invalid MetaInfo file") {
