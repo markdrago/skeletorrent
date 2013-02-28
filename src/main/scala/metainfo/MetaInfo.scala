@@ -1,8 +1,12 @@
-package main.scala
+package metainfo
 
 import akka.util.ByteString
 import java.security.MessageDigest
+import MetaInfoValidator
 import org.apache.commons.codec.net.URLCodec
+import bencoding._
+import scala.Some
+import bencoding.BEncodedList
 
 class MetaInfo(val dict: BEncodedMap) {
   MetaInfoValidator.validate(dict)

@@ -1,4 +1,4 @@
-package main.scala
+package bencoding
 
 import akka.util.ByteString
 import scala.language.implicitConversions

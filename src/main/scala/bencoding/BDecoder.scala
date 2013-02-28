@@ -1,6 +1,9 @@
-package main.scala
+package bencoding
 
 import akka.util.ByteString
+import main.scala._
+import BEncodedInt
+import BEncodedList
 
 class BDecoder {
   /**

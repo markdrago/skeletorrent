@@ -1,4 +1,8 @@
-package main.scala
+package metainfo
+
+import bencoding._
+import bencoding.BEncodedInt
+import bencoding.BEncodedList
 
 object MetaInfoValidator {
   def validate(dict: BEncodedMap) {

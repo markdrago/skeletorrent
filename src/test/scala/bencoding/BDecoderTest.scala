@@ -1,9 +1,10 @@
-package test.scala
+package bencoding
 
 import org.scalatest.{BeforeAndAfter, FunSuite}
 import main.scala._
 import javax.xml.bind.DatatypeConverter
 import akka.util.ByteString
+import bencoding.{BEncodedMap, BEncodedInt, BEncodedString, BDecoder}
 
 class BDecoderTest extends FunSuite with BeforeAndAfter {
 

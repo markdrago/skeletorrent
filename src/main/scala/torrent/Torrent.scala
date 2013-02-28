@@ -1,10 +1,10 @@
 package torrent
 
-import main.scala.MetaInfo
 import akka.actor.Actor
 import akka.util.ByteString
 import org.apache.commons.io.FileUtils
 import java.io.File
+import metainfo.MetaInfo
 
 class Torrent(val metainfoFileName: String) extends Actor {
   var metainfo: MetaInfo = null

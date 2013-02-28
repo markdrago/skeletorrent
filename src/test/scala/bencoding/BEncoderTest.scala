@@ -1,3 +1,6 @@
+package bencoding
+
+import bencoding.{BEncoder, BDecoder}
 import org.scalatest.FunSuite
 import org.scalatest.matchers.ShouldMatchers
 import main.scala._
