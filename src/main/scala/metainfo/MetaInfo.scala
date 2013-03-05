@@ -41,10 +41,6 @@ class MetaInfo(val dict: BEncodedMap) {
   def infoHash: ByteString = {
     ByteString(MessageDigest.getInstance("SHA-1").digest(infoMap.serialize.toArray))
   }
-
-  def encodedInfoHash: String = {
-    new String((new URLCodec("UTF-8")).encode(infoHash.toArray))
-  }
 }
 
 class MetaInfoFile(val pathList: BEncodedList, val length: Int) {

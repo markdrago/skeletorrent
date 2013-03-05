@@ -77,11 +77,6 @@ class MetaInfoTest extends FunSuite with ShouldMatchers {
     val expected = ByteString(DatatypeConverter.parseBase64Binary("ymrEu9lx05ApNdvPwtPqJbQopUc="))
     MetaInfo(MetaInfoTest.get_metainfo_file_contents).infoHash should be (expected)
   }
-
-  test("encodedInfoHash can be calculated") {
-    val expected = "%CAj%C4%BB%D9q%D3%90%295%DB%CF%C2%D3%EA%25%B4%28%A5G"
-    MetaInfo(MetaInfoTest.get_metainfo_file_contents).encodedInfoHash should be (expected)
-  }
 }
 
 object MetaInfoTest {
