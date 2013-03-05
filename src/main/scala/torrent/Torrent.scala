@@ -1,18 +1,15 @@
 package torrent
 
 import akka.actor.Actor
-import akka.pattern.ask
-import util.{Random, Success, Failure}
+import util.Random
 import akka.util.Timeout
 import metainfo.MetaInfo
-import spray.http.HttpResponse
-import spray.httpx.RequestBuilding._
 import concurrent.duration._
 import concurrent.ExecutionContext
 import scala.Predef.{String, println}
 import utils.Utils
 import java.net.URL
-import tracker.AnnounceEvent
+import tracker.{TrackerAnnouncementMsg, AnnounceEvent}
 
 case class InjectMetainfoFileMsg(filename: String)
 case class AnnounceResponseMsg(response: String)
@@ -39,25 +36,9 @@ class Torrent extends Actor {
     announceToTracker
   }
 
-  //TODO: pull tracker operations out in to a separate actor
   def announceToTracker {
-    val httpClient = context.actorFor(context.system / "http-client")
-
-    val trackerUrl = trackerGetRequestUrl()
-    val responseFuture = ask(httpClient, Get(trackerUrl)).mapTo[HttpResponse]
-    responseFuture onComplete {
-      case Success(response) => {
-        if (response.status.isSuccess) {
-          self ! AnnounceResponseMsg(response.entity.asString)
-        } else {
-          println(s"Got a non-successful response from tracker GET request to: $trackerUrl")
-        }
-      }
-      case Failure(error) => {
-        println(s"Unable to make tracker GET request to: $trackerUrl")
-        error.printStackTrace()
-      }
-    }
+    val announcer = context.actorFor(context.system / "tracker-announcer")
+    announcer ! TrackerAnnouncementMsg(trackerGetRequestUrl())
   }
 
   def trackerGetRequestUrl(eventType: Option[AnnounceEvent] = None): String = {
