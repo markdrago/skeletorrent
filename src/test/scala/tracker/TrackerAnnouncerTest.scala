@@ -31,10 +31,26 @@ class TrackerAnnouncerTest(_system: ActorSystem) extends TestKit(_system) with I
     )
   }
 
-  test("responseHandler replies with AnnounceResponseMsg on success") {
+  def failedHttpResponse = {
+    HttpResponse(
+      StatusCode.int2StatusCode(404),
+      HttpEntity("nope"),
+      Nil,
+      HttpProtocols.`HTTP/1.1`
+    )
+  }
+
+  test("TrackerAnnouncer replies with AnnounceResponseMsg on success") {
     TestSystem.trackerAnnouncer ! TrackerAnnouncementMsg("http://example.com")
     httpClientProbe.expectMsgType[HttpRequest](1000.millis)
     httpClientProbe.reply(successfulHttpResponse)
     expectMsg(AnnounceResponseMsg("result here"))
+  }
+
+  test("TrackerAnnouncer replies with TrackerAnnouncementFailure after failed HTTP response") {
+    TestSystem.trackerAnnouncer ! TrackerAnnouncementMsg("http://example.com")
+    httpClientProbe.expectMsgType[HttpRequest](1000.millis)
+    httpClientProbe.reply(failedHttpResponse)
+    expectMsgType[TrackerAnnouncementFailure]
   }
 }
