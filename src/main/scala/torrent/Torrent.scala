@@ -6,7 +6,6 @@ import akka.util.Timeout
 import metainfo.MetaInfo
 import concurrent.duration._
 import concurrent.ExecutionContext
-import scala.Predef.{String, println}
 import utils.Utils
 import java.net.URL
 import tracker.{TrackerAnnouncementMsg, AnnounceEvent}
