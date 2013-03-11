@@ -4,7 +4,7 @@ import org.scalatest.{BeforeAndAfter, FunSuite}
 import org.scalatest.matchers.ShouldMatchers
 import akka.testkit.TestActorRef
 import akka.actor.ActorSystem
-import metainfo.{MetaInfoTest, MetaInfo}
+import protocol.{MetaInfoTest, MetaInfo}
 import bencoding.BEncoder
 import tracker.AnnounceEventStarted
 

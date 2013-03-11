@@ -1,4 +1,4 @@
-package metainfo
+package protocol
 
 import org.scalatest.FunSuite
 import org.scalatest.matchers.ShouldMatchers

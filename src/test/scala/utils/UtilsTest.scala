@@ -2,7 +2,7 @@ package utils
 
 import org.scalatest.FunSuite
 import org.scalatest.matchers.ShouldMatchers
-import metainfo.MetaInfo
+import protocol.MetaInfo
 import javax.xml.bind.DatatypeConverter
 import akka.util.ByteString
 

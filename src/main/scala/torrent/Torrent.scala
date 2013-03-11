@@ -3,7 +3,7 @@ package torrent
 import akka.actor.Actor
 import util.Random
 import akka.util.Timeout
-import metainfo.MetaInfo
+import protocol.MetaInfo
 import concurrent.duration._
 import concurrent.ExecutionContext
 import utils.Utils

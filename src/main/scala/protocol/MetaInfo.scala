@@ -1,4 +1,4 @@
-package metainfo
+package protocol
 
 import akka.util.ByteString
 import java.security.MessageDigest

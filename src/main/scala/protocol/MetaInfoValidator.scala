@@ -1,4 +1,4 @@
-package metainfo
+package protocol
 
 import bencoding._
 import bencoding.BEncodedInt
