@@ -12,14 +12,6 @@ import concurrent.duration._
 case class TrackerAnnouncementMsg(val url: String)
 
 class TrackerAnnouncementFailure(msg: String) extends Exception(msg)
-object TrackerAnnouncementFailure {
-  def apply(msg: String): TrackerAnnouncementFailure = new TrackerAnnouncementFailure(msg)
-  def apply(msg: String, e: Throwable): TrackerAnnouncementFailure = {
-    val t = apply(msg)
-    t.initCause(e)
-    t
-  }
-}
 
 trait TrackerAnnouncerComponent {
   this: HttpClientComponent =>
@@ -41,10 +33,7 @@ trait TrackerAnnouncerComponent {
             if (response.status.isSuccess)
               AnnounceResponseMsg(response.entity.asString)
             else
-              TrackerAnnouncementFailure(s"Non-successful response from tracker GET Request")
-        }
-        .recover {
-          case t: Throwable => TrackerAnnouncementFailure(s"Tracker announcement failed for: $url", t)
+              new TrackerAnnouncementFailure(s"Non-successful response from tracker GET Request: $url")
         }
         .pipeTo(sender)
     }
