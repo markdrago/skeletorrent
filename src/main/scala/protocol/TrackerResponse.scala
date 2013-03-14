@@ -25,7 +25,7 @@ class TrackerResponse(val dict: BEncodedMap) {
 object TrackerResponse {
   val bdecoder = new BDecoder
 
-  def apply(bytes: ByteString) {
+  def apply(bytes: ByteString): TrackerResponse = {
     val bencodedItem = bdecoder.decodeItem(bytes)
 
     bencodedItem match {

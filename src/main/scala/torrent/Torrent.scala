@@ -3,7 +3,7 @@ package torrent
 import akka.actor.Actor
 import util.Random
 import akka.util.Timeout
-import protocol.MetaInfo
+import protocol.{TrackerResponse, MetaInfo}
 import concurrent.duration._
 import concurrent.ExecutionContext
 import utils.Utils
@@ -11,7 +11,7 @@ import java.net.URL
 import tracker.{TrackerAnnouncementMsg, AnnounceEvent}
 
 case class InjectMetainfoFileMsg(filename: String)
-case class AnnounceResponseMsg(response: String)
+case class AnnounceResponseMsg(response: TrackerResponse)
 
 class Torrent extends Actor {
   implicit val ec = ExecutionContext.global
@@ -26,7 +26,13 @@ class Torrent extends Actor {
 
   def receive = {
     case InjectMetainfoFileMsg(f) => initMetaInfoFile(f)
-    case AnnounceResponseMsg(s) => println(s)
+    case AnnounceResponseMsg(resp) => handleTrackerResponse(resp)
+  }
+
+  def handleTrackerResponse(resp: TrackerResponse) {
+    resp.peers.foreach((peer) => {
+      println(s"id: ${peer.peerId}, ip: ${peer.ip}, port: ${peer.port}")
+    })
   }
 
   def initMetaInfoFile(metainfoFileName: String) {

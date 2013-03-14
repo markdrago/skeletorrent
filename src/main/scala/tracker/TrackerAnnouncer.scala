@@ -6,8 +6,9 @@ import spray.httpx.RequestBuilding._
 import spray.http.HttpResponse
 import torrent.AnnounceResponseMsg
 import concurrent.ExecutionContext
-import akka.util.Timeout
+import akka.util.{ByteString, Timeout}
 import concurrent.duration._
+import protocol.TrackerResponse
 
 case class TrackerAnnouncementMsg(url: String)
 
@@ -31,7 +32,9 @@ trait TrackerAnnouncerComponent {
         .map {
           response =>
             if (response.status.isSuccess)
-              AnnounceResponseMsg(response.entity.asString)
+              AnnounceResponseMsg(
+                TrackerResponse(ByteString(response.entity.buffer))
+              )
             else
               new TrackerAnnouncementFailure(s"Non-successful response from tracker GET Request: $url")
         }
