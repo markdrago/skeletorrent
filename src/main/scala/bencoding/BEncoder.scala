@@ -25,7 +25,7 @@ class BEncoder {
       case i:Int => new BEncodedInt(i)
       case m:Map[_, _] => encodeMap(m.asInstanceOf[Map[String, Any]])
       case l:Seq[_] => encodeList(l)
-      case _ => throw new IllegalArgumentException("Unexpected element type being BEncoded")
+      case _ => throw new IllegalArgumentException("Unexpected element type being BEncoded: " + i.getClass)
     }
   }
 }
