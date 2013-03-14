@@ -1,6 +1,7 @@
 package protocol
 
-import bencoding.{BEncodedList, BEncodedInt, BEncodedMap}
+import bencoding.{BDecoder, BEncodedList, BEncodedInt, BEncodedMap}
+import akka.util.ByteString
 
 class TrackerResponse(val dict: BEncodedMap) {
   TrackerResponseValidator.validate(dict)
@@ -17,5 +18,19 @@ class TrackerResponse(val dict: BEncodedMap) {
         )
       }
     })
+  }
+}
+
+//TODO: deduplicate this and the very similar MetaInfo object
+object TrackerResponse {
+  val bdecoder = new BDecoder
+
+  def apply(bytes: ByteString) {
+    val bencodedItem = bdecoder.decodeItem(bytes)
+
+    bencodedItem match {
+      case m:BEncodedMap => new TrackerResponse(m)
+      case _ => throw new IllegalArgumentException("TrackerResponse data must contain a top-level Map")
+    }
   }
 }
