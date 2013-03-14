@@ -3,7 +3,6 @@ package protocol
 import akka.util.ByteString
 import java.security.MessageDigest
 import bencoding._
-import scala.Some
 
 class MetaInfo(val dict: BEncodedMap) {
   MetaInfoValidator.validate(dict)
@@ -18,11 +17,7 @@ class MetaInfo(val dict: BEncodedMap) {
 
   def isMultifile = infoMap.get("length").isEmpty
 
-  def length:Option[Int] = {
-    val length = infoMap.get("length")
-    if (length.isDefined) { return Some(length.get.toInt)}
-    return None
-  }
+  def length:Option[Int] = infoMap.get("length").map(_.toInt)
 
   def pieces: List[ByteString] = {
     val bytes = infoMap.get("pieces").get match {
@@ -33,10 +28,8 @@ class MetaInfo(val dict: BEncodedMap) {
   }
 
   def files: Option[List[MetaInfoFile]] = {
-    val files = infoMap.get("files")
-    if (files.isEmpty) { return None }
-    Some(
-      files.get.asInstanceOf[BEncodedList].map((file: BEncodedItem) => {
+    infoMap.get("files").map((files) =>
+      files.asInstanceOf[BEncodedList].map((file: BEncodedItem) => {
         val dict = file.asInstanceOf[BEncodedMap]
         new MetaInfoFile(dict.get("path").get.asInstanceOf[BEncodedList], dict.get("length").get.toInt)
       }).toList
