@@ -11,7 +11,7 @@ resolvers += "Typesafe Repository" at "http://repo.typesafe.com/typesafe/release
 resolvers += "Spray Repository" at "http://nightlies.spray.io"
 
 libraryDependencies ++= Seq(
-    "org.scalatest" % "scalatest_2.10" % "1.9.1" % "test",
+    "org.scalatest" %% "scalatest" % "1.9.1" % "test",
     "com.typesafe.akka" %% "akka-actor" % "2.1.1",
     "com.typesafe.akka" %% "akka-testkit" % "2.1.1",
     "commons-codec" % "commons-codec" % "1.7",
