@@ -32,10 +32,10 @@ class Torrent extends Actor {
   def initMetaInfoFile(metainfoFileName: String) {
     this.metainfo = MetaInfo(Utils.readFile(metainfoFileName))
     println(Utils.urlEncode(metainfo.infoHash))
-    announceToTracker
+    announceToTracker()
   }
 
-  def announceToTracker {
+  def announceToTracker() {
     val announcer = context.actorFor(context.system / "tracker-announcer")
     announcer ! TrackerAnnouncementMsg(trackerGetRequestUrl())
   }
@@ -56,7 +56,7 @@ class Torrent extends Actor {
     buf ++= s"&downloaded=$downloaded"
     buf ++= s"&left=$left"
     for (e <- eventType) buf ++= s"&event=${e.name}"
-    buf.toString
+    buf.toString()
   }
 }
 

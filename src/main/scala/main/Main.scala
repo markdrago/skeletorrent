@@ -1,4 +1,4 @@
-package main.scala
+package main
 
 import org.rogach.scallop._
 import akka.actor.{Props, ActorSystem}
@@ -6,7 +6,7 @@ import torrent.{InjectMetainfoFileMsg, Torrent}
 
 class Conf(arguments: Seq[String]) extends ScallopConf(arguments) {
   val metainfoFileName = trailArg[String]("metainfoFileName", required=true)
-  verify
+  verify()
 }
 
 object Main {

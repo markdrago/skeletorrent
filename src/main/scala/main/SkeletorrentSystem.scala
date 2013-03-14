@@ -1,4 +1,4 @@
-package main.scala
+package main
 
 import akka.actor.{ActorSystem, Props}
 import spray.client.HttpClient

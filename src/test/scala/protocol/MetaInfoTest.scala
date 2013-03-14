@@ -47,11 +47,11 @@ class MetaInfoTest extends FunSuite with ShouldMatchers {
   }
 
   test("isMultifile returns false for single file metainfo") {
-    MetaInfo(MetaInfoTest.get_metainfo_file_contents).isMultifile should be (false)
+    MetaInfo(MetaInfoTest.get_metainfo_file_contents) should not be a ('multifile)
   }
 
   test("isMultifile returns true for multiple file metainfo") {
-    MetaInfo(MetaInfoTest.get_metainfo_file_contents_multifile).isMultifile should be (true)
+    MetaInfo(MetaInfoTest.get_metainfo_file_contents_multifile) should be a ('multifile)
   }
 
   test("files returns None for single file metainfo") {

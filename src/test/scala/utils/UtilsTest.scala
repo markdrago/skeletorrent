@@ -2,8 +2,6 @@ package utils
 
 import org.scalatest.FunSuite
 import org.scalatest.matchers.ShouldMatchers
-import protocol.MetaInfo
-import javax.xml.bind.DatatypeConverter
 import akka.util.ByteString
 
 class UtilsTest extends FunSuite with ShouldMatchers {

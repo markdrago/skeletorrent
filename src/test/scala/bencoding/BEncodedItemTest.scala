@@ -56,7 +56,7 @@ class BEncodedItemTest extends FunSuite with ShouldMatchers {
     verifyBEncodedIntProducesExpectedResultWhenSerialized(0, "i0e")
   }
 
-  def verifyBEncodedIntProducesExpectedResultWhenSerialized(input: Int, expected: String) = {
+  def verifyBEncodedIntProducesExpectedResultWhenSerialized(input: Int, expected: String) {
     new BEncodedInt(input).serialize should be (ByteString(expected))
   }
 
@@ -88,7 +88,7 @@ class BEncodedItemTest extends FunSuite with ShouldMatchers {
     verifyBEncodedStringProducesExpectedResultWhenSerialized("lambda: λ", 10)
   }
 
-  def verifyBEncodedStringProducesExpectedResultWhenSerialized(input: String, len: Int) = {
+  def verifyBEncodedStringProducesExpectedResultWhenSerialized(input: String, len: Int) {
     BEncodedString.fromString(input).serialize should be (ByteString((len.toString + ":" + input)))
   }
 
@@ -139,8 +139,8 @@ class BEncodedItemTest extends FunSuite with ShouldMatchers {
 
   test("BEncodedMap hashCode method works") {
     val f = fixture
-    assert(f.map_a.hashCode.equals(f.map_b.hashCode))
-    assert(! f.map_a.hashCode.equals(f.map_c.hashCode))
+    assert(f.map_a.hashCode().equals(f.map_b.hashCode()))
+    assert(! f.map_a.hashCode().equals(f.map_c.hashCode()))
   }
 
   test("BEncodedMap encodedLength works") {
@@ -166,7 +166,7 @@ class BEncodedItemTest extends FunSuite with ShouldMatchers {
 
   test("BEncodedMap is mappable") {
     val f = fixture
-    f.map_a.map(_.toString)
+    f.map_a.map(_.toString())
   }
 
   test("serialization succeeds for a highly nested structure") {

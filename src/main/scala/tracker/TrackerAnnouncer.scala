@@ -9,7 +9,7 @@ import concurrent.ExecutionContext
 import akka.util.Timeout
 import concurrent.duration._
 
-case class TrackerAnnouncementMsg(val url: String)
+case class TrackerAnnouncementMsg(url: String)
 
 class TrackerAnnouncementFailure(msg: String) extends Exception(msg)
 
