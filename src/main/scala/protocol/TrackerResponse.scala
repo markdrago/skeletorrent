@@ -19,6 +19,13 @@ class TrackerResponse(val dict: BEncodedMap) {
       }
     })
   }
+
+  override def equals(other: Any): Boolean = {
+    other match {
+      case t:TrackerResponse => this.dict == t.dict
+      case _ => false
+    }
+  }
 }
 
 //TODO: deduplicate this and the very similar MetaInfo object

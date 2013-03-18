@@ -7,7 +7,8 @@ import akka.testkit._
 import spray.http._
 import spray.http.HttpResponse
 import concurrent.duration._
-import torrent.AnnounceResponseMsg
+import protocol.TrackerResponse
+import akka.util.ByteString
 
 class TrackerAnnouncerTest(_system: ActorSystem) extends TestKit(_system) with ImplicitSender
   with FunSuite with ShouldMatchers with BeforeAndAfterAll {
@@ -22,12 +23,34 @@ class TrackerAnnouncerTest(_system: ActorSystem) extends TestKit(_system) with I
     override val trackerAnnouncer = system.actorOf(Props(new TrackerAnnouncer))
   }
 
+  test("TrackerAnnouncer replies with TrackerAnnounceResponseMsg on success") {
+    TestSystem.trackerAnnouncer ! TrackerAnnounceRequestMsg("http://example.com")
+    httpClientProbe.expectMsgType[HttpRequest](1000.millis)
+    httpClientProbe.reply(successfulHttpResponse)
+    expectMsg(successfulTrackerAnnounceResponseMsg)
+  }
+
+  test("TrackerAnnouncer replies with TrackerAnnounceFailure after failed HTTP response") {
+    TestSystem.trackerAnnouncer ! TrackerAnnounceRequestMsg("http://example.com")
+    httpClientProbe.expectMsgType[HttpRequest](1000.millis)
+    httpClientProbe.reply(failedHttpResponse)
+    expectMsgType[TrackerAnnounceFailure]
+  }
+
+  def successfulHttpResponseBody = "d8:intervali300e5:peerslee"
+
   def successfulHttpResponse = {
     HttpResponse(
       StatusCode.int2StatusCode(200),
-      HttpEntity("result here"),
+      HttpEntity(successfulHttpResponseBody),
       Nil,
       HttpProtocols.`HTTP/1.1`
+    )
+  }
+
+  def successfulTrackerAnnounceResponseMsg = {
+    TrackerAnnounceResponseMsg(
+      TrackerResponse(ByteString(successfulHttpResponseBody))
     )
   }
 
@@ -38,19 +61,5 @@ class TrackerAnnouncerTest(_system: ActorSystem) extends TestKit(_system) with I
       Nil,
       HttpProtocols.`HTTP/1.1`
     )
-  }
-
-  test("TrackerAnnouncer replies with AnnounceResponseMsg on success") {
-    TestSystem.trackerAnnouncer ! TrackerAnnouncementMsg("http://example.com")
-    httpClientProbe.expectMsgType[HttpRequest](1000.millis)
-    httpClientProbe.reply(successfulHttpResponse)
-    expectMsg(AnnounceResponseMsg("result here"))
-  }
-
-  test("TrackerAnnouncer replies with TrackerAnnouncementFailure after failed HTTP response") {
-    TestSystem.trackerAnnouncer ! TrackerAnnouncementMsg("http://example.com")
-    httpClientProbe.expectMsgType[HttpRequest](1000.millis)
-    httpClientProbe.reply(failedHttpResponse)
-    expectMsgType[TrackerAnnouncementFailure]
   }
 }

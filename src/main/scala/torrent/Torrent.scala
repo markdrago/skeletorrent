@@ -8,10 +8,9 @@ import concurrent.duration._
 import concurrent.ExecutionContext
 import utils.Utils
 import java.net.URL
-import tracker.{TrackerAnnouncementMsg, AnnounceEvent}
+import tracker.{TrackerAnnounceResponseMsg, TrackerAnnounceRequestMsg, AnnounceEvent}
 
 case class InjectMetainfoFileMsg(filename: String)
-case class AnnounceResponseMsg(response: TrackerResponse)
 
 class Torrent extends Actor {
   implicit val ec = ExecutionContext.global
@@ -26,7 +25,7 @@ class Torrent extends Actor {
 
   def receive = {
     case InjectMetainfoFileMsg(f) => initMetaInfoFile(f)
-    case AnnounceResponseMsg(resp) => handleTrackerResponse(resp)
+    case TrackerAnnounceResponseMsg(resp) => handleTrackerResponse(resp)
   }
 
   def handleTrackerResponse(resp: TrackerResponse) {
@@ -37,13 +36,12 @@ class Torrent extends Actor {
 
   def initMetaInfoFile(metainfoFileName: String) {
     this.metainfo = MetaInfo(Utils.readFile(metainfoFileName))
-    println(Utils.urlEncode(metainfo.infoHash))
     announceToTracker()
   }
 
   def announceToTracker() {
     val announcer = context.actorFor(context.system / "tracker-announcer")
-    announcer ! TrackerAnnouncementMsg(trackerGetRequestUrl())
+    announcer ! TrackerAnnounceRequestMsg(trackerGetRequestUrl())
   }
 
   def trackerGetRequestUrl(eventType: Option[AnnounceEvent] = None): String = {

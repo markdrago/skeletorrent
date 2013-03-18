@@ -4,15 +4,14 @@ import akka.actor.{ActorRef, Actor}
 import akka.pattern.{ask, pipe}
 import spray.httpx.RequestBuilding._
 import spray.http.HttpResponse
-import torrent.AnnounceResponseMsg
 import concurrent.ExecutionContext
 import akka.util.{ByteString, Timeout}
 import concurrent.duration._
 import protocol.TrackerResponse
 
-case class TrackerAnnouncementMsg(url: String)
-
-class TrackerAnnouncementFailure(msg: String) extends Exception(msg)
+case class TrackerAnnounceRequestMsg(url: String)
+case class TrackerAnnounceResponseMsg(response: TrackerResponse)
+class TrackerAnnounceFailure(msg: String) extends Exception(msg)
 
 trait TrackerAnnouncerComponent {
   this: HttpClientComponent =>
@@ -22,8 +21,8 @@ trait TrackerAnnouncerComponent {
     implicit val ec = ExecutionContext.global
     implicit val timeout: Timeout = 5 seconds span
 
-    def receive = {
-      case TrackerAnnouncementMsg(u) => announceToTracker(u)
+    override def receive = {
+      case TrackerAnnounceRequestMsg(u) => announceToTracker(u)
     }
 
     def announceToTracker(url: String) {
@@ -32,11 +31,11 @@ trait TrackerAnnouncerComponent {
         .map {
           response =>
             if (response.status.isSuccess)
-              AnnounceResponseMsg(
+              TrackerAnnounceResponseMsg(
                 TrackerResponse(ByteString(response.entity.buffer))
               )
             else
-              new TrackerAnnouncementFailure(s"Non-successful response from tracker GET Request: $url")
+              new TrackerAnnounceFailure(s"Non-successful response from tracker GET Request: $url")
         }
         .pipeTo(sender)
     }
