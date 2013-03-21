@@ -7,8 +7,8 @@ import akka.testkit._
 import spray.http._
 import spray.http.HttpResponse
 import concurrent.duration._
-import protocol.TrackerResponse
 import akka.util.ByteString
+import bencoding.messages.TrackerResponse
 
 class TrackerAnnouncerTest(_system: ActorSystem) extends TestKit(_system) with ImplicitSender
   with FunSuite with ShouldMatchers with BeforeAndAfterAll {

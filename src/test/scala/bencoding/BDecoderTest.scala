@@ -1,5 +1,6 @@
 package bencoding
 
+import items.{BEncodedMap, BEncodedInt, BEncodedString}
 import org.scalatest.{BeforeAndAfter, FunSuite}
 import javax.xml.bind.DatatypeConverter
 import akka.util.ByteString

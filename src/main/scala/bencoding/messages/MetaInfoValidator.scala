@@ -1,8 +1,9 @@
-package protocol
+package bencoding.messages
 
 import bencoding._
-import bencoding.BEncodedInt
-import bencoding.BEncodedList
+import items._
+import items.BEncodedInt
+import items.BEncodedList
 
 object MetaInfoValidator extends Validator {
   def validate(dict: BEncodedMap) {
@@ -59,9 +60,7 @@ object MetaInfoValidator extends Validator {
       case _ => throw new IllegalArgumentException("Multifile Metainfo path element was not a list")
     }
 
-    if (list.length == 0) {
-      throw new IllegalArgumentException("Multifile Metainfo path was an empty list")
-    }
+    require(list.length > 0, "Multifile Metainfo path was an empty list")
 
     list.map((i: BEncodedItem) => {
       i match {
@@ -72,8 +71,6 @@ object MetaInfoValidator extends Validator {
   }
 
   private def checkForbiddenElement(dict: BEncodedMap, key: String, dictDesc: String) {
-    if (dict.get(key).isDefined) {
-      throw new IllegalArgumentException(s"'$key' must not be present in $dictDesc")
-    }
+    require(dict.get(key).isEmpty, s"'$key' must not be present in $dictDesc")
   }
 }

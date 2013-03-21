@@ -1,6 +1,6 @@
-package protocol
+package bencoding.messages
 
-import bencoding.{BEncodedString, BEncodedList, BEncodedInt, BEncodedMap}
+import bencoding.items.{BEncodedMap, BEncodedList, BEncodedInt, BEncodedString}
 
 object TrackerResponseValidator extends Validator {
   def validate(dict: BEncodedMap) = {

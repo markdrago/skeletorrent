@@ -1,4 +1,4 @@
-package protocol
+package bencoding.messages
 
 import org.scalatest.FunSuite
 import org.scalatest.matchers.ShouldMatchers
@@ -9,33 +9,33 @@ class TrackerResponseValidatorTest extends FunSuite with ShouldMatchers {
   val bdecoder = new BDecoder
 
   test("checkValidity throws when interval is not present") {
-    val map = TrackerResponseTest.valid_response - "interval"
+    val map = TrackerResponseSample.valid_response - "interval"
     checkValidityForFailure(map, "interval")
   }
 
   test("checkValidity throws when interval is not an integer") {
-    val map = (TrackerResponseTest.valid_response - "interval") + ("interval" -> "hello")
+    val map = (TrackerResponseSample.valid_response - "interval") + ("interval" -> "hello")
     checkValidityForFailure(map, "interval")
   }
 
   test("checkValidity throws when peers is not present") {
-    val map = TrackerResponseTest.valid_response - "peers"
+    val map = TrackerResponseSample.valid_response - "peers"
     checkValidityForFailure(map, "peers")
   }
 
   test("checkValidity throws when peers is not a list") {
-    val map = (TrackerResponseTest.valid_response - "peers") + ("peers" -> "hello")
+    val map = (TrackerResponseSample.valid_response - "peers") + ("peers" -> "hello")
     checkValidityForFailure(map, "peers")
   }
 
   test("checkValidity is okay with an empty peers list") {
-    val map = (TrackerResponseTest.valid_response - "peers") + ("peers" -> List())
+    val map = (TrackerResponseSample.valid_response - "peers") + ("peers" -> List())
     val dict = (new BEncoder).encodeMap(map)
     TrackerResponseValidator.validate(dict)
   }
 
   test("checkValidity throws if an item in peers is not a dictionary") {
-    val map = (TrackerResponseTest.valid_response - "peers") + ("peers" -> List("hello"))
+    val map = (TrackerResponseSample.valid_response - "peers") + ("peers" -> List("hello"))
     checkValidityForFailure(map, "peer")
   }
 
@@ -106,11 +106,11 @@ class TrackerResponseValidatorTest extends FunSuite with ShouldMatchers {
 
   //valid
   test("checkValidity is cool with a valid response") {
-    TrackerResponseValidator.validate(bencoder.encodeMap(TrackerResponseTest.valid_response))
+    TrackerResponseValidator.validate(bencoder.encodeMap(TrackerResponseSample.valid_response))
   }
 
   test("checkValidity is cool with a valid real world response") {
-    TrackerResponseValidator.validate(bdecoder.decodeMap(TrackerResponseTest.valid_real_world_response))
+    TrackerResponseValidator.validate(bdecoder.decodeMap(TrackerResponseSample.valid_real_world_response))
   }
 
   def addPeer(input: Map[String, Any], peerToAdd: Map[String, Any]): Map[String, Any] = {
@@ -119,7 +119,7 @@ class TrackerResponseValidatorTest extends FunSuite with ShouldMatchers {
   }
 
   def checkValidityForFailureWithPeer(peer: Map[String, Any], expectedMissing: String) {
-    checkValidityForFailure(addPeer(TrackerResponseTest.valid_response, peer), expectedMissing)
+    checkValidityForFailure(addPeer(TrackerResponseSample.valid_response, peer), expectedMissing)
   }
 
   def checkValidityForFailure(input: Map[String, Any], expectedMissing: String) {

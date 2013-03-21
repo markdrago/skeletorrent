@@ -1,6 +1,7 @@
 package bencoding
 
 import akka.util.ByteString
+import items._
 
 class BDecoder {
   /**

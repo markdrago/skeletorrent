@@ -7,7 +7,7 @@ import spray.http.HttpResponse
 import concurrent.ExecutionContext
 import akka.util.{ByteString, Timeout}
 import concurrent.duration._
-import protocol.TrackerResponse
+import bencoding.messages.TrackerResponse
 
 case class TrackerAnnounceRequestMsg(url: String)
 case class TrackerAnnounceResponseMsg(response: TrackerResponse)

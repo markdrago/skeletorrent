@@ -3,38 +3,30 @@ package torrent
 import akka.actor.Actor
 import util.Random
 import akka.util.Timeout
-import protocol.{TrackerResponse, MetaInfo}
 import concurrent.duration._
 import concurrent.ExecutionContext
 import utils.Utils
 import java.net.URL
 import tracker.{TrackerAnnounceResponseMsg, TrackerAnnounceRequestMsg, AnnounceEvent}
+import torrent.Torrent.TorrentInitializationMsg
+import bencoding.messages.{TrackerResponse, MetaInfo}
 
-case class InjectMetainfoFileMsg(filename: String)
-
-class Torrent extends Actor {
+class Torrent(val port: Int) extends Actor {
   implicit val ec = ExecutionContext.global
   implicit val timeout: Timeout = 5 seconds span
 
   var metainfo: MetaInfo = null
   val peerId = Torrent.generatePeerId
-  val port = 6881
   var uploaded = 0
   var downloaded = 0
   var left = 0
 
   def receive = {
-    case InjectMetainfoFileMsg(f) => initMetaInfoFile(f)
+    case TorrentInitializationMsg(f) => initializeTorrent(f)
     case TrackerAnnounceResponseMsg(resp) => handleTrackerResponse(resp)
   }
 
-  def handleTrackerResponse(resp: TrackerResponse) {
-    resp.peers.foreach((peer) => {
-      println(s"id: ${peer.peerId}, ip: ${peer.ip}, port: ${peer.port}")
-    })
-  }
-
-  def initMetaInfoFile(metainfoFileName: String) {
+  def initializeTorrent(metainfoFileName: String) {
     this.metainfo = MetaInfo(Utils.readFile(metainfoFileName))
     announceToTracker()
   }
@@ -49,7 +41,7 @@ class Torrent extends Actor {
 
     var initialSep = "?"
     if (urlDetails.getQuery != null && !urlDetails.getQuery.isEmpty)
-      initialSep = "&"
+    initialSep = "&"
 
     val buf = new StringBuilder
     buf ++= metainfo.trackerUrl
@@ -62,6 +54,12 @@ class Torrent extends Actor {
     for (e <- eventType) buf ++= s"&event=${e.name}"
     buf.toString()
   }
+
+  def handleTrackerResponse(resp: TrackerResponse) {
+    resp.peers.foreach((peer) => {
+      println(s"id: ${peer.peerId}, ip: ${peer.ip}, port: ${peer.port}")
+    })
+  }
 }
 
 object Torrent {
@@ -69,4 +67,7 @@ object Torrent {
     val prefix = "-SK0001-"
     prefix + new String((new Random()).alphanumeric.take(20 - prefix.length).toArray)
   }
+
+  //messages
+  case class TorrentInitializationMsg(filename: String)
 }

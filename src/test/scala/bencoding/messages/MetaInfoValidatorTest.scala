@@ -1,4 +1,4 @@
-package protocol
+package bencoding.messages
 
 import org.scalatest.FunSuite
 import org.scalatest.matchers.ShouldMatchers
@@ -12,7 +12,7 @@ class MetaInfoValidatorTest extends FunSuite with ShouldMatchers {
   }
 
   test("checkMetaInfoValidity throws when announce is not a string") {
-    val map = MetaInfoTest.get_metainfo_map_for_single_file - "announce" + ("announce" -> 10)
+    val map = MetaInfoSample.get_metainfo_map_for_single_file - "announce" + ("announce" -> 10)
     checkMetaInfoValidityForFailure(map, "announce")
   }
 
@@ -21,7 +21,7 @@ class MetaInfoValidatorTest extends FunSuite with ShouldMatchers {
   }
 
   test("checkMetaInfoValidity throws when info element is not a map") {
-    val map = MetaInfoTest.get_metainfo_map_for_single_file
+    val map = MetaInfoSample.get_metainfo_map_for_single_file
     val badMap = (map - "info") + ("info" -> "notamap")
     checkMetaInfoValidityForFailure(badMap, "info")
   }
@@ -31,7 +31,7 @@ class MetaInfoValidatorTest extends FunSuite with ShouldMatchers {
   }
 
   test("checkMetaInfoValidity throws when name is not a string") {
-    val map = putInfoElement(MetaInfoTest.get_metainfo_map_for_single_file, "name", 10)
+    val map = putInfoElement(MetaInfoSample.get_metainfo_map_for_single_file, "name", 10)
     checkMetaInfoValidityForFailure(map, "name")
   }
 
@@ -40,7 +40,7 @@ class MetaInfoValidatorTest extends FunSuite with ShouldMatchers {
   }
 
   test("checkMetaInfoValidity throws when piece length is not an int") {
-    val map = putInfoElement(MetaInfoTest.get_metainfo_map_for_single_file, "piece length", "not an int")
+    val map = putInfoElement(MetaInfoSample.get_metainfo_map_for_single_file, "piece length", "not an int")
     checkMetaInfoValidityForFailure(map, "piece length")
   }
 
@@ -49,7 +49,7 @@ class MetaInfoValidatorTest extends FunSuite with ShouldMatchers {
   }
 
   test("checkMetaInfoValidity throws when pieces is not a string") {
-    val map = putInfoElement(MetaInfoTest.get_metainfo_map_for_single_file, "pieces", 10)
+    val map = putInfoElement(MetaInfoSample.get_metainfo_map_for_single_file, "pieces", 10)
     checkMetaInfoValidityForFailure(map, "pieces")
   }
 
@@ -59,24 +59,24 @@ class MetaInfoValidatorTest extends FunSuite with ShouldMatchers {
   }
 
   test("checkMetaInfoValidity throws when info/length is not an integer") {
-    val map = putInfoElement(MetaInfoTest.get_metainfo_map_for_single_file, "length", "not an int")
+    val map = putInfoElement(MetaInfoSample.get_metainfo_map_for_single_file, "length", "not an int")
     checkMetaInfoValidityForFailure(map, "length")
   }
 
   //multi file only
   test("checkMetaInfoValidity throws when info/files is not present for multifile metainfo") {
-    val map = MetaInfoTest.get_metainfo_map_for_multi_file
+    val map = MetaInfoSample.get_metainfo_map_for_multi_file
     val badMap = (map - "info") + ("info" -> (map.get("info").get.asInstanceOf[Map[String, Any]] - "files"))
     checkMetaInfoValidityForFailure(badMap, "files")
   }
 
   test("checkMetaInfoValidity throws when info/files is not a list") {
-    val map = putInfoElement(MetaInfoTest.get_metainfo_map_for_multi_file, "files", "not a list")
+    val map = putInfoElement(MetaInfoSample.get_metainfo_map_for_multi_file, "files", "not a list")
     checkMetaInfoValidityForFailure(map, "files")
   }
 
   test("checkMetaInfoValidity throws when info/files list contains a non-dictionary") {
-    val map = MetaInfoTest.get_metainfo_map_for_multi_file
+    val map = MetaInfoSample.get_metainfo_map_for_multi_file
     val fileList = map.get("info").get.asInstanceOf[Map[String, Any]].get("files").get.asInstanceOf[List[Any]]
     val bogusFileList = "not a dictionary" :: fileList
     val bogusMap = putInfoElement(map, "files", bogusFileList)
@@ -120,7 +120,7 @@ class MetaInfoValidatorTest extends FunSuite with ShouldMatchers {
   }
 
   def addFileDictToMultifileMetainfo(fileDict: Map[String, Any]): Map[String, Any] = {
-    val map = MetaInfoTest.get_metainfo_map_for_multi_file
+    val map = MetaInfoSample.get_metainfo_map_for_multi_file
     val fileList = map.get("info").get.asInstanceOf[Map[String, Any]].get("files").get.asInstanceOf[List[Any]]
     val newFileList = fileDict :: fileList
     putInfoElement(map, "files", newFileList)
@@ -128,7 +128,7 @@ class MetaInfoValidatorTest extends FunSuite with ShouldMatchers {
 
   //appears to be both single & multifile
   test("checkMetaInfoValidity throws when both length & files are present") {
-    val map = putInfoElement(MetaInfoTest.get_metainfo_map_for_single_file, "files", "no matter")
+    val map = putInfoElement(MetaInfoSample.get_metainfo_map_for_single_file, "files", "no matter")
     checkMetaInfoValidityForFailure(map, "files")
   }
 
@@ -137,11 +137,11 @@ class MetaInfoValidatorTest extends FunSuite with ShouldMatchers {
   }
 
   def checkMetaInfoValidityForMissingTopLevelElement(missing: String) {
-    checkMetaInfoValidityForFailure(MetaInfoTest.get_metainfo_map_for_single_file - missing, missing)
+    checkMetaInfoValidityForFailure(MetaInfoSample.get_metainfo_map_for_single_file - missing, missing)
   }
 
   def checkMetaInfoValidityForMissingInfoElement(missing: String) {
-    val map = MetaInfoTest.get_metainfo_map_for_single_file
+    val map = MetaInfoSample.get_metainfo_map_for_single_file
     val badMap = (map - "info") + ("info" -> (map.get("info").get.asInstanceOf[Map[String, Any]] - missing))
     checkMetaInfoValidityForFailure(badMap, missing)
   }
@@ -153,12 +153,12 @@ class MetaInfoValidatorTest extends FunSuite with ShouldMatchers {
   }
 
   test("checkMetaInfoValidity does not throw exception for a valid single file MetaInfo file") {
-    val dict = (new BDecoder).decodeMap(MetaInfoTest.get_metainfo_file_contents)
+    val dict = (new BDecoder).decodeMap(MetaInfoSample.get_metainfo_file_contents)
     MetaInfoValidator.validate(dict)
   }
 
   test("checkMetaInfoValidity does not throw exception for a valid multifile MetaInfo file") {
-    val dict = (new BDecoder).decodeMap(MetaInfoTest.get_metainfo_file_contents_multifile)
+    val dict = (new BDecoder).decodeMap(MetaInfoSample.get_metainfo_file_contents_multifile)
     MetaInfoValidator.validate(dict)
   }
 }

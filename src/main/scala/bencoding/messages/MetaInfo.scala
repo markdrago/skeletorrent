@@ -1,8 +1,9 @@
-package protocol
+package bencoding.messages
 
 import akka.util.ByteString
 import java.security.MessageDigest
 import bencoding._
+import items._
 
 class MetaInfo(val dict: BEncodedMap) {
   MetaInfoValidator.validate(dict)

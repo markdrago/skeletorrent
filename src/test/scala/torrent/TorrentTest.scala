@@ -3,22 +3,22 @@ package torrent
 import org.scalatest.{BeforeAndAfter, FunSuite}
 import org.scalatest.matchers.ShouldMatchers
 import akka.testkit.TestActorRef
-import akka.actor.ActorSystem
-import protocol.{MetaInfoTest, MetaInfo}
+import akka.actor.{Props, ActorSystem}
 import bencoding.BEncoder
 import tracker.AnnounceEventStarted
+import bencoding.messages.{MetaInfoSample, MetaInfo}
 
 class TorrentTest extends FunSuite with ShouldMatchers with BeforeAndAfter {
   implicit val system = ActorSystem("TorrentTest")
   var t: Torrent = null
 
   before {
-    val actorRef = TestActorRef[Torrent]
+    val actorRef = TestActorRef(Props(new Torrent(6881)))
     t = actorRef.underlyingActor
   }
 
   test("trackerGetRequestUrl generates expected Url in simple situation") {
-    t.metainfo = MetaInfo(MetaInfoTest.get_metainfo_file_contents)
+    t.metainfo = MetaInfo(MetaInfoSample.get_metainfo_file_contents)
     val result = t.trackerGetRequestUrl()
     result should be (
       "http://www.legaltorrents.com:7070/announce?" +
@@ -32,7 +32,7 @@ class TorrentTest extends FunSuite with ShouldMatchers with BeforeAndAfter {
   }
 
   test("trackerGetRequestUrl generates expected Url if announce URL already has parameters") {
-    var m = MetaInfoTest.get_metainfo_map_for_single_file
+    var m = MetaInfoSample.get_metainfo_map_for_single_file
     m = (m - "announce") + ("announce" -> "http://www.legaltorrents.com:7070/announce?key=1")
     t.metainfo = new MetaInfo((new BEncoder).encodeMap(m))
     val result = t.trackerGetRequestUrl()
@@ -48,7 +48,7 @@ class TorrentTest extends FunSuite with ShouldMatchers with BeforeAndAfter {
   }
 
   test("trackerGetRequestUrl generates expected Url when given an event type") {
-    t.metainfo = MetaInfo(MetaInfoTest.get_metainfo_file_contents)
+    t.metainfo = MetaInfo(MetaInfoSample.get_metainfo_file_contents)
     val result = t.trackerGetRequestUrl(Some(AnnounceEventStarted()))
     result should be (
       "http://www.legaltorrents.com:7070/announce?" +

@@ -1,7 +1,8 @@
-package protocol
+package bencoding.messages
 
-import bencoding.{BDecoder, BEncodedList, BEncodedInt, BEncodedMap}
+import bencoding.BDecoder
 import akka.util.ByteString
+import bencoding.items.{BEncodedMap, BEncodedList, BEncodedInt}
 
 class TrackerResponse(val dict: BEncodedMap) {
   TrackerResponseValidator.validate(dict)

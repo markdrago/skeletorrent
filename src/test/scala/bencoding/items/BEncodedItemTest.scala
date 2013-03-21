@@ -1,4 +1,4 @@
-package bencoding
+package bencoding.items
 
 import scala.language.reflectiveCalls
 import org.scalatest.FunSuite
