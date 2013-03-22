@@ -1,7 +1,7 @@
 package torrent
 
 import spray.io.{ConnectionActors, IOServer}
-import spray.io.IOBridge.{Bound, Connection}
+import spray.io.IOBridge.Connection
 import akka.actor.{Props, ActorRef}
 
 class TorrentListenerTcp(torrent: ActorRef) extends IOServer with ConnectionActors {

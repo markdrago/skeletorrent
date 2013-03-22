@@ -25,25 +25,24 @@ class Torrent(val port: Int) extends Actor {
   var downloaded = 0
   var left = 0
 
-  //TODO maybe use of become could clean up these unrelated receive handlers (check IOServer src)
-  def receive = {
-    case TorrentInitializationMsg(f) => initializeTorrentPhase1(f)
-    case Bound(endpoint, tag) => announceToTracker()
+  def receive = initialize
+
+  private def initialize: Receive = {
+    case TorrentInitializationMsg(filename) =>
+      this.metainfo = MetaInfo(Utils.readFile(filename))
+      context.become(announceToTracker)
+      torrentListener ! new Bind(new InetSocketAddress(port), 100, ())
+  }
+
+  private def announceToTracker: Receive = {
+    case Bound(_, _) =>
+      context.become(steadyState)
+      val announcer = context.actorFor(context.system / "tracker-announcer")
+      announcer ! TrackerAnnounceRequestMsg(trackerGetRequestUrl())
+  }
+
+  private def steadyState: Receive = {
     case TrackerAnnounceResponseMsg(resp) => handleTrackerResponse(resp)
-  }
-
-  private def initializeTorrentPhase1(metainfoFileName: String) {
-    this.metainfo = MetaInfo(Utils.readFile(metainfoFileName))
-    bindToListeningPort()
-  }
-
-  private def bindToListeningPort() {
-    torrentListener ! new Bind(new InetSocketAddress(port), 100, ())
-  }
-
-  private def announceToTracker() {
-    val announcer = context.actorFor(context.system / "tracker-announcer")
-    announcer ! TrackerAnnounceRequestMsg(trackerGetRequestUrl())
   }
 
   private[torrent] def trackerGetRequestUrl(eventType: Option[AnnounceEvent] = None): String = {
