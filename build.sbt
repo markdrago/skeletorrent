@@ -10,6 +10,8 @@ resolvers += "Typesafe Repository" at "http://repo.typesafe.com/typesafe/release
 
 resolvers += "Spray Repository" at "http://nightlies.spray.io"
 
+seq(ScctPlugin.instrumentSettings : _*)
+
 libraryDependencies ++= Seq(
     "org.scalatest" %% "scalatest" % "1.9.1" % "test",
     "com.typesafe.akka" %% "akka-actor" % "2.1.1",

@@ -1,16 +1,16 @@
 package torrent
 
-import spray.io.{ConnectionActors, IOExtension, IOServer}
-import spray.io.IOBridge.Connection
+import spray.io.{ConnectionActors, IOServer}
+import spray.io.IOBridge.{Bound, Connection}
 import akka.actor.{Props, ActorRef}
 
-trait TorrentListenerComponent {
-  val torrentListener: TorrentListener
-  class TorrentListener extends IOServer with ConnectionActors {
-    val ioBridge = IOExtension(context.system).ioBridge()
+class TorrentListenerTcp(torrent: ActorRef) extends IOServer with ConnectionActors {
 
-    def createConnectionActor(connection: Connection): ActorRef = {
-      context.system.actorOf(Props(new TorrentPeer))
-    }
+  override def createConnectionActor(connection: Connection): ActorRef = {
+    context.system.actorOf(Props(new TorrentPeer(torrent, connection)), nextConnectionActorName)
+  }
+
+  override def nextConnectionActorName: String = {
+    s"peer:inbound:${super.nextConnectionActorName}"
   }
 }

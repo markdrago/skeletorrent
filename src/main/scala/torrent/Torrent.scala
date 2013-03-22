@@ -1,19 +1,23 @@
 package torrent
 
-import akka.actor.Actor
+import akka.actor.{Props, Actor}
 import util.Random
 import akka.util.Timeout
 import concurrent.duration._
 import concurrent.ExecutionContext
 import utils.Utils
-import java.net.URL
+import java.net.{InetSocketAddress, URL}
 import tracker.{TrackerAnnounceResponseMsg, TrackerAnnounceRequestMsg, AnnounceEvent}
 import torrent.Torrent.TorrentInitializationMsg
 import bencoding.messages.{TrackerResponse, MetaInfo}
+import spray.io.IOBridge.Bind
+import spray.io.IOServer.Bound
 
 class Torrent(val port: Int) extends Actor {
   implicit val ec = ExecutionContext.global
   implicit val timeout: Timeout = 5 seconds span
+
+  val torrentListener = context.system.actorOf(Props(new TorrentListenerTcp(self)))
 
   var metainfo: MetaInfo = null
   val peerId = Torrent.generatePeerId
@@ -21,22 +25,28 @@ class Torrent(val port: Int) extends Actor {
   var downloaded = 0
   var left = 0
 
+  //TODO maybe use of become could clean up these unrelated receive handlers (check IOServer src)
   def receive = {
-    case TorrentInitializationMsg(f) => initializeTorrent(f)
+    case TorrentInitializationMsg(f) => initializeTorrentPhase1(f)
+    case Bound(endpoint, tag) => announceToTracker()
     case TrackerAnnounceResponseMsg(resp) => handleTrackerResponse(resp)
   }
 
-  def initializeTorrent(metainfoFileName: String) {
+  private def initializeTorrentPhase1(metainfoFileName: String) {
     this.metainfo = MetaInfo(Utils.readFile(metainfoFileName))
-    announceToTracker()
+    bindToListeningPort()
   }
 
-  def announceToTracker() {
+  private def bindToListeningPort() {
+    torrentListener ! new Bind(new InetSocketAddress(port), 100, ())
+  }
+
+  private def announceToTracker() {
     val announcer = context.actorFor(context.system / "tracker-announcer")
     announcer ! TrackerAnnounceRequestMsg(trackerGetRequestUrl())
   }
 
-  def trackerGetRequestUrl(eventType: Option[AnnounceEvent] = None): String = {
+  private[torrent] def trackerGetRequestUrl(eventType: Option[AnnounceEvent] = None): String = {
     val urlDetails = new URL(metainfo.trackerUrl)
 
     var initialSep = "?"
@@ -55,7 +65,7 @@ class Torrent(val port: Int) extends Actor {
     buf.toString()
   }
 
-  def handleTrackerResponse(resp: TrackerResponse) {
+  private def handleTrackerResponse(resp: TrackerResponse) {
     resp.peers.foreach((peer) => {
       println(s"id: ${peer.peerId}, ip: ${peer.ip}, port: ${peer.port}")
     })
