@@ -54,12 +54,7 @@ object MetaInfoValidator extends Validator {
     validateMultiFileFilePathElement(path)
   }
 
-  private def validateMultiFileFilePathElement(item: BEncodedItem) {
-    val list = item match {
-      case l:BEncodedList => l
-      case _ => throw new IllegalArgumentException("Multifile Metainfo path element was not a list")
-    }
-
+  private def validateMultiFileFilePathElement(list: BEncodedList) {
     require(list.length > 0, "Multifile Metainfo path was an empty list")
 
     list.map((i: BEncodedItem) => {

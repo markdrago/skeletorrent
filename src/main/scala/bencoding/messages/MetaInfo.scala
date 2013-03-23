@@ -21,10 +21,7 @@ class MetaInfo(val dict: BEncodedMap) {
   def length:Option[Int] = infoMap.get("length").map(_.toInt)
 
   def pieces: List[ByteString] = {
-    val bytes = infoMap.get("pieces").get match {
-      case s:BEncodedString => s.value
-      case _ => throw new IllegalStateException("metainfo.info.pieces must be a BEncodedString")
-    }
+    val bytes = infoMap.get("pieces").get.asInstanceOf[BEncodedString].value
     bytes.grouped(20).toList
   }
 

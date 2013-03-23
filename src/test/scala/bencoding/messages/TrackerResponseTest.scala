@@ -28,6 +28,17 @@ class TrackerResponseTest extends FunSuite with ShouldMatchers {
     list.last.port should be (51415)
   }
 
+  test("TrackerResponse equality works") {
+    val tr1 = getValidTrackerResponse
+    val tr2 = getValidTrackerResponse
+    tr1 should be (tr2)
+    tr1 should not be ("abc")
+  }
+
+  test("TrackerResponse can not be created with data that has a non-map top level element") {
+    evaluating { TrackerResponse(ByteString("li1ee")) } should produce [IllegalArgumentException]
+  }
+
   def getValidTrackerResponse = {
     getTrackerResponse(TrackerResponseSample.valid_response)
   }

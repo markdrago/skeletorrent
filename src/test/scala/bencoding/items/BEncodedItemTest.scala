@@ -169,6 +169,29 @@ class BEncodedItemTest extends FunSuite with ShouldMatchers {
     f.map_a.map(_.toString())
   }
 
+  test("BEncodedMap can have items added to it") {
+    val f = fixture
+    val newMap = f.map_a + ("new" -> BEncodedInt(3))
+    newMap.iterator.length should be (2)
+    newMap.get("new").get should be (BEncodedInt(3))
+  }
+
+  test("BEncodedMap can have items removed from it") {
+    val f = fixture
+    val newMap = f.map_a - "a"
+    newMap.iterator.length should be (0)
+  }
+
+  test("BEncodedItem without overriden toInt throws exception") {
+    val f = fixture
+    evaluating { f.str_a.toInt } should produce [IllegalStateException]
+  }
+
+  test("BEncodedItem without overriden get method throws exception") {
+    val f = fixture
+    evaluating { f.str_a.get("hello") } should produce [IllegalStateException]
+  }
+
   test("serialization succeeds for a highly nested structure") {
     val f = fixture
     val l = BEncodedList(List(f.int_a, f.str_a, f.map_a))
