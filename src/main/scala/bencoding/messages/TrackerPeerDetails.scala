@@ -1,3 +1,5 @@
 package bencoding.messages
 
-case class TrackerPeerDetails(peerId: String, ip: String, port: Int)
+import akka.util.ByteString
+
+case class TrackerPeerDetails(peerId: ByteString, ip: String, port: Int)

@@ -13,4 +13,8 @@ object Utils {
   def readFile(filename: String): ByteString = {
     ByteString(FileUtils.readFileToByteArray(new File(filename)))
   }
+
+  def bsToHex(bs: ByteString): String = {
+    ("" /: bs.map(b => "%02x".format(b))) {_ + _ + " "}
+  }
 }

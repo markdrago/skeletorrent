@@ -2,7 +2,7 @@ package bencoding.messages
 
 import bencoding.BDecoder
 import akka.util.ByteString
-import bencoding.items.{BEncodedMap, BEncodedList, BEncodedInt}
+import bencoding.items.{BEncodedString, BEncodedMap, BEncodedList, BEncodedInt}
 
 class TrackerResponse(val dict: BEncodedMap) {
   TrackerResponseValidator.validate(dict)
@@ -13,7 +13,7 @@ class TrackerResponse(val dict: BEncodedMap) {
     dict.get("peers").get.asInstanceOf[BEncodedList].collect({
       case map:BEncodedMap => {
         TrackerPeerDetails(
-          map.get("peer id").get.toString,
+          map.get("peer id").get.asInstanceOf[BEncodedString].value,
           map.get("ip").get.toString,
           map.get("port").get.toInt
         )
