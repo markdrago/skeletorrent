@@ -20,10 +20,10 @@ class TrackerResponseTest extends FunSuite with ShouldMatchers {
   test("TrackerResponse can produce list of peers") {
     val list = getValidTrackerResponse.peers
     list should have size 2
-    list.head.peerId should be ("abcdefghijklmnopqrst")
+    list.head.peerId should be (ByteString("abcdefghijklmnopqrst"))
     list.head.ip should be ("1.2.3.4")
     list.head.port should be (6881)
-    list.last.peerId should be ("12345678901234567890")
+    list.last.peerId should be (ByteString("12345678901234567890"))
     list.last.ip should be ("130.130.130.130")
     list.last.port should be (51415)
   }
