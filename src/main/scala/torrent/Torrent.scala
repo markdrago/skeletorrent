@@ -3,13 +3,13 @@ package torrent
 import akka.actor.{ActorRef, Props, Actor}
 import peer.{TorrentStateTag, OutboundPeer, OutboundPeerConnection}
 import akka.util.{ByteString, Timeout}
-import concurrent.duration._
 import concurrent.ExecutionContext
 import java.net.InetSocketAddress
 import torrent.Torrent._
 import bencoding.messages.{TrackerResponse, MetaInfo}
 import spray.io.IOBridge.Bind
 import spray.io.IOServer.Bound
+import concurrent.duration._
 import tracker.TrackerAnnouncer.{TrackerRequest, TrackerAnnounceRequestMsg, TrackerAnnounceResponseMsg}
 
 class Torrent(val port: Int,
@@ -27,7 +27,7 @@ class Torrent(val port: Int,
 
   def receive = uninitializedState
 
-  protected[torrent] def uninitializedState: Receive = {
+  private def uninitializedState: Receive = {
     case TorrentStartMsg() =>
       context.become(awaitingBindingState)
       peerAccepter ! Bind(new InetSocketAddress(port), 100, new TorrentStateTag(self, metainfo.infoHash, peerId))
