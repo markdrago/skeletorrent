@@ -4,6 +4,10 @@ import spray.io.IOBridge.Connection
 import spray.io.{ConnectionActors, IOServer}
 import akka.actor.{Props, ActorRef}
 
+trait PeerAccepterComponent {
+  val peerAccepter: ActorRef
+}
+
 class PeerAccepterTcp extends IOServer with ConnectionActors {
 
   override def createConnectionActor(connection: Connection): ActorRef = {

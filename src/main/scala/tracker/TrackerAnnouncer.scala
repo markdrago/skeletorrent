@@ -8,10 +8,9 @@ import concurrent.ExecutionContext
 import akka.util.{ByteString, Timeout}
 import concurrent.duration._
 import bencoding.messages.TrackerResponse
-
-case class TrackerAnnounceRequestMsg(url: String)
-case class TrackerAnnounceResponseMsg(response: TrackerResponse)
-class TrackerAnnounceFailure(msg: String) extends Exception(msg)
+import tracker.TrackerAnnouncer.{TrackerAnnounceRequestMsg, TrackerAnnounceFailure, TrackerAnnounceResponseMsg}
+import java.net.URL
+import utils.Utils
 
 trait TrackerAnnouncerComponent {
   this: HttpClientComponent =>
@@ -22,10 +21,10 @@ trait TrackerAnnouncerComponent {
     implicit val timeout: Timeout = 5 seconds span
 
     override def receive = {
-      case TrackerAnnounceRequestMsg(u) => announceToTracker(u)
+      case TrackerAnnounceRequestMsg(r) => announceToTracker(sender, TrackerAnnouncer.prepareRequestUrl(r))
     }
 
-    def announceToTracker(url: String) {
+    def announceToTracker(sender: ActorRef, url: String) {
       ask(httpClient, Get(url))
         .mapTo[HttpResponse]
         .map {
@@ -39,5 +38,47 @@ trait TrackerAnnouncerComponent {
         }
         .pipeTo(sender)
     }
+  }
+}
+
+object TrackerAnnouncer {
+  class TrackerAnnounceFailure(msg: String) extends Exception(msg)
+
+  //messages
+  case class TrackerAnnounceResponseMsg(response: TrackerResponse)
+  case class TrackerAnnounceRequestMsg(request: TrackerRequest)
+
+  //convenience
+  case class TrackerRequest (
+    baseUrl: String,
+    infoHash: ByteString,
+    peerId: String,
+    port: Int,
+    uploaded: Int,
+    downloaded: Int,
+    left: Int,
+    eventType: Option[AnnounceEvent] = None
+  )
+
+  def prepareRequestUrl(req: TrackerRequest): String = {
+    var initialSep = "?"
+    if (urlHasQueryPart(req.baseUrl))
+      initialSep = "&"
+
+    val buf = new StringBuilder
+    buf ++= req.baseUrl
+    buf ++= s"${initialSep}info_hash=" + Utils.urlEncode(req.infoHash)
+    buf ++= s"&peer_id=${req.peerId}"
+    buf ++= s"&port=${req.port}"
+    buf ++= s"&uploaded=${req.uploaded}"
+    buf ++= s"&downloaded=${req.downloaded}"
+    buf ++= s"&left=${req.left}"
+    for (e <- req.eventType) buf ++= s"&event=${e.name}"
+    buf.toString()
+  }
+
+  private def urlHasQueryPart(url: String): Boolean = {
+    val urlDetails = new URL(url)
+    urlDetails.getQuery != null && !urlDetails.getQuery.isEmpty
   }
 }

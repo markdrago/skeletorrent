@@ -1,9 +1,9 @@
 package main
 
 import org.rogach.scallop._
-import akka.actor.{Props, ActorSystem}
-import torrent.Torrent.TorrentInitializationMsg
-import torrent.Torrent
+import akka.actor.ActorSystem
+import torrent.Torrent.TorrentStartMsg
+import utils.Utils
 
 class Conf(arguments: Seq[String]) extends ScallopConf(arguments) {
   val metainfoFileName = trailArg[String]("metainfoFileName", required=true)
@@ -15,9 +15,13 @@ object Main {
     val conf = new Conf(args)
 
     val actorSystem = ActorSystem("sk")
-    new SkeletorrentSystem(actorSystem)
+    val skeletorrentSystem = new SkeletorrentSystem(conf, actorSystem)
 
-    val torrentActor = actorSystem.actorOf(Props(new Torrent(6881)))
-    torrentActor ! TorrentInitializationMsg(conf.metainfoFileName())
+    val torrentActor = skeletorrentSystem.torrentFactory.create(
+      actorSystem,
+      6881,
+      Utils.readFile(conf.metainfoFileName.get.get)
+    )
+    torrentActor ! TorrentStartMsg()
   }
 }

@@ -15,6 +15,6 @@ object Utils {
   }
 
   def bsToHex(bs: ByteString): String = {
-    ("" /: bs.map(b => "%02x".format(b))) {_ + _ + " "}
+    bs.map(b => "%02x".format(b)).mkString(" ")
   }
 }

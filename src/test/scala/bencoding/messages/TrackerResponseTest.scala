@@ -31,8 +31,8 @@ class TrackerResponseTest extends FunSuite with ShouldMatchers {
   test("TrackerResponse equality works") {
     val tr1 = getValidTrackerResponse
     val tr2 = getValidTrackerResponse
-    tr1 should be (tr2)
-    tr1 should not be ("abc")
+    tr1.equals(tr2) should be (true)
+    tr1.equals("abc") should be (false)
   }
 
   test("TrackerResponse can not be created with data that has a non-map top level element") {

@@ -1,0 +1,36 @@
+package torrent
+
+import akka.util.ByteString
+import peer.PeerAccepterComponent
+import scala.Predef.String
+import util.Random
+import bencoding.messages.MetaInfo
+import tracker.TrackerAnnouncerComponent
+import akka.actor.{ActorRef, Props, ActorSystem}
+
+trait TorrentFactoryComponent {
+  this: PeerAccepterComponent
+  with TrackerAnnouncerComponent =>
+  val torrentFactory: TorrentFactory
+
+  //TODO: possible to inject actor system via cake pattern?
+
+  class TorrentFactory {
+    def create(system: ActorSystem, port : Int, metainfoString: ByteString): ActorRef = {
+      system.actorOf(Props(
+        new Torrent(
+          port,
+          generatePeerId,
+          MetaInfo.apply(metainfoString),
+          peerAccepter,
+          trackerAnnouncer
+        )
+      ))
+    }
+
+    def generatePeerId: String = {
+      val prefix = "-SK0001-"
+      prefix + new String((new Random()).alphanumeric.take(20 - prefix.length).toArray)
+    }
+  }
+}
