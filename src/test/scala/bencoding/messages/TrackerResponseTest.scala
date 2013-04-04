@@ -10,7 +10,7 @@ import bencoding.{BEncoder, BDecoder}
 class TrackerResponseTest extends FunSuite with ShouldMatchers {
   test("TrackerResponse constructor doesn't allow creation of invalid TrackerResponses") {
     val dict = (new BDecoder).decodeMap(ByteString("d1:a1:be"))
-    evaluating { new TrackerResponse(dict) } should produce [IllegalArgumentException]
+    evaluating { TrackerResponse(dict) } should produce [IllegalArgumentException]
   }
 
   test("TrackerResponse can produce interval") {
@@ -44,6 +44,6 @@ class TrackerResponseTest extends FunSuite with ShouldMatchers {
   }
 
   def getTrackerResponse(map: Map[String, Any]) = {
-    new TrackerResponse((new BEncoder).encodeMap(map))
+    TrackerResponse((new BEncoder).encodeMap(map))
   }
 }
