@@ -13,7 +13,7 @@ import spray.io.IOServer.Bound
 import akka.util.ByteString
 import org.mockito.Mockito._
 import org.mockito.Matchers.{eq => same, any}
-import akka.testkit.{TestActorRef, TestActor}
+import akka.testkit.TestActorRef
 
 class TorrentTest(_system: ActorSystem) extends TestSystem(_system) {
   def this() = this(ActorSystem("TrackerAnnouncerTest"))

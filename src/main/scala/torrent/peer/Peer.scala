@@ -36,7 +36,7 @@ sealed trait Peer extends Actor {
       .append("length: " + hex.take(12) + "\n")
       .append("type: " + hex.drop(12).take(3) + "\n")
       .append(("" /: groups) { _ + _ + "\n" })
-      .result
+      .result()
   }
 }
 

@@ -1,9 +1,6 @@
 package tracker
 
-import org.scalatest.matchers.ShouldMatchers
-import org.scalatest.{BeforeAndAfterAll, FunSuite}
 import akka.actor.{Props, ActorSystem}
-import akka.testkit._
 import spray.http._
 import spray.http.HttpResponse
 import concurrent.duration._
