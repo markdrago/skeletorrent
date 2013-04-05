@@ -43,7 +43,7 @@ sealed trait Peer extends Actor {
 class InboundPeer(val _conn: Connection) extends Peer {
   val connection = context.system.actorOf(Props(new DefaultIOConnectionActor(_conn, EmptyPipelineStage)))
 
-  //TODO: parse handshake from inbound and get a hold of their peer id
+  //TODO: parse handshake from inbound, get a hold of their peer id, verify infohash, etc.
   val otherPeerId = ByteString("originally inbound")
 }
 

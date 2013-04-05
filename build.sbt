@@ -14,6 +14,7 @@ seq(ScctPlugin.instrumentSettings : _*)
 
 libraryDependencies ++= Seq(
     "org.scalatest" %% "scalatest" % "1.9.1" % "test",
+    "org.mockito" % "mockito-core" % "1.9.5" % "test",
     "com.typesafe.akka" %% "akka-actor" % "2.1.1",
     "com.typesafe.akka" %% "akka-testkit" % "2.1.1",
     "commons-codec" % "commons-codec" % "1.7",

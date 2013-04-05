@@ -1,7 +1,7 @@
 package torrent
 
-import akka.actor.{ActorRef, Props, Actor}
-import peer.{TorrentStateTag, OutboundPeer, OutboundPeerConnection}
+import akka.actor.{ActorLogging, ActorRef, Actor}
+import peer.{OutboundPeerFactory, TorrentStateTag}
 import akka.util.{ByteString, Timeout}
 import concurrent.ExecutionContext
 import java.net.InetSocketAddress
@@ -16,7 +16,9 @@ class Torrent(val port: Int,
               val peerId: String,
               val metainfo: MetaInfo,
               peerAccepter: ActorRef,
-              trackerAnnouncer: ActorRef) extends Actor {
+              trackerAnnouncer: ActorRef,
+              outboundPeerFactory: OutboundPeerFactory)
+      extends Actor with ActorLogging {
   implicit val ec = ExecutionContext.global
   implicit val timeout: Timeout = 5 seconds span
 
@@ -54,20 +56,19 @@ class Torrent(val port: Int,
 
   private def handleTrackerResponse(resp: TrackerResponse) {
     resp.peers.foreach((peer) => {
-      println(s"discovered peer: id: ${peer.peerId}, ip: ${peer.ip}, port: ${peer.port}")
+      log.info(s"discovered peer: id: ${peer.peerId}, ip: ${peer.ip}, port: ${peer.port}")
       connectToPeer(peer.peerId, peer.ip, peer.port)
     })
   }
 
   private def connectToPeer(otherPeerId: ByteString, host: String, port: Int) {
-    val conn = context.actorOf(Props[OutboundPeerConnection])
     val tag = TorrentStateTag(self, metainfo.infoHash, peerId)
-    context.system.actorOf(Props(new OutboundPeer(conn, tag, otherPeerId, host, port)))
+    outboundPeerFactory.create(context, tag, otherPeerId, host, port)
   }
 
   private def registerPeer(peer: ActorRef) {
     peers = peer :: peers
-    println("peer registered with torrent")
+    log.info("peer registered with torrent")
   }
 }
 

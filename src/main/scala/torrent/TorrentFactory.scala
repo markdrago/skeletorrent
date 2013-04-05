@@ -7,10 +7,12 @@ import util.Random
 import bencoding.messages.MetaInfo
 import tracker.TrackerAnnouncerComponent
 import akka.actor.{ActorRef, Props, ActorSystem}
+import torrent.peer.OutboundPeerFactoryComponent
 
 trait TorrentFactoryComponent {
   this: PeerAccepterComponent
-  with TrackerAnnouncerComponent =>
+  with TrackerAnnouncerComponent
+  with OutboundPeerFactoryComponent =>
   val torrentFactory: TorrentFactory
 
   //TODO: possible to inject actor system via cake pattern?
@@ -23,7 +25,8 @@ trait TorrentFactoryComponent {
           generatePeerId,
           MetaInfo.apply(metainfoString),
           peerAccepter,
-          trackerAnnouncer
+          trackerAnnouncer,
+          outboundPeerFactory
         )
       ))
     }
