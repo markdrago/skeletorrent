@@ -7,11 +7,11 @@ import torrent.peer.{OutboundPeerFactory, OutboundPeerFactoryComponent, PeerAcce
 import torrent.TorrentFactoryComponent
 
 class SkeletorrentSystem(conf: Conf, system: ActorSystem)
-  extends HttpClientComponent
-  with TrackerAnnouncerComponent
-  with TorrentFactoryComponent
-  with OutboundPeerFactoryComponent
-  with PeerAccepterComponent {
+    extends HttpClientComponent
+    with TrackerAnnouncerComponent
+    with TorrentFactoryComponent
+    with OutboundPeerFactoryComponent
+    with PeerAccepterComponent {
 
   override val httpClient = system.actorOf(Props(new HttpClient))
   override val trackerAnnouncer = system.actorOf(Props(new TrackerAnnouncer))
