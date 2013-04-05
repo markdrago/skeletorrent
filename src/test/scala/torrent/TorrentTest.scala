@@ -1,10 +1,10 @@
 package torrent
 
-import akka.actor.{ActorContext, Props, ActorSystem}
+import akka.actor.{Actor, ActorContext, Props, ActorSystem}
 import bencoding.messages.{TrackerPeerDetails, TrackerResponse, MetaInfo, MetaInfoSample}
 import main.TestSystem
 import peer.TorrentStateTag
-import torrent.Torrent.TorrentStartMsg
+import torrent.Torrent.{RegisterPeerWithTorrent, TorrentStartMsg}
 import spray.io.IOBridge.Bind
 import concurrent.duration._
 import java.net.InetSocketAddress
@@ -13,6 +13,7 @@ import spray.io.IOServer.Bound
 import akka.util.ByteString
 import org.mockito.Mockito._
 import org.mockito.Matchers.{eq => same, any}
+import akka.testkit.{TestActorRef, TestActor}
 
 class TorrentTest(_system: ActorSystem) extends TestSystem(_system) {
   def this() = this(ActorSystem("TrackerAnnouncerTest"))
@@ -20,7 +21,7 @@ class TorrentTest(_system: ActorSystem) extends TestSystem(_system) {
   val peerId = "TestTorrentPeerId"
   val metaInfo = MetaInfo(MetaInfoSample.get_metainfo_file_contents)
 
-  def get_torrent = testActorSystem.actorOf(Props(
+  def get_torrent = TestActorRef(
       new Torrent(
         6881,
         peerId,
@@ -29,7 +30,7 @@ class TorrentTest(_system: ActorSystem) extends TestSystem(_system) {
         trackerAnnouncer,
         outboundPeerFactory
       )
-    ))
+    )
 
   test("torrent sends binding message to peerAccepterProbe after receiving init message") {
     val torrent = get_torrent
@@ -62,7 +63,7 @@ class TorrentTest(_system: ActorSystem) extends TestSystem(_system) {
   }
 
   test("torrent tries to connect to peers after receiving tracker response") {
-    //get torrent and put it in awaitingBinding state
+    //get torrent and put it in steady state
     val torrent = get_torrent
     torrent ! TorrentStartMsg()
     torrent ! Bound(null, null)
@@ -79,5 +80,27 @@ class TorrentTest(_system: ActorSystem) extends TestSystem(_system) {
       same("1.2.3.4"),
       same(6881)
     )
+  }
+
+  test("torrent remembers peers which register with it") {
+    //get torrent and put it in stead state
+    val torrent = get_torrent
+    torrent ! TorrentStartMsg()
+    torrent ! Bound(null, null)
+
+    torrent.underlyingActor.peers should be ('empty)
+
+    //send tracker peer registration message
+    val peer = system.actorOf(Props(
+      new Actor {
+        def receive = {
+          case _ => null
+        }
+      }
+    ))
+    torrent ! RegisterPeerWithTorrent(peer)
+
+    torrent.underlyingActor.peers should contain (peer)
+    torrent.underlyingActor.peers should have length(1)
   }
 }
