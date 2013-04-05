@@ -1,18 +1,10 @@
 package torrent
 
-import org.scalatest.matchers.ShouldMatchers
-import org.scalatest.FunSuite
 import main.TestSystem
 import akka.actor.ActorSystem
-import akka.testkit.TestKit
 
-class TorrentFactoryTest(_system: ActorSystem) extends TestKit(_system) with FunSuite with ShouldMatchers with TestSystem {
-  //need to provide a no-argument constructor
+class TorrentFactoryTest(_system: ActorSystem) extends TestSystem(_system) {
   def this() = this(ActorSystem("TorrentFactoryTest"))
-
-  //since we are making our own actor system, make sure we use the same one
-  //within TestSystem by overriding testActorSystem here
-  override def testActorSystem = _system
 
   override val torrentFactory = new TorrentFactory
 

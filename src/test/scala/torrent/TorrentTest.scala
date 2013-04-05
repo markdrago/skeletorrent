@@ -1,8 +1,5 @@
 package torrent
 
-import org.scalatest.{BeforeAndAfterAll, FunSuite}
-import org.scalatest.matchers.ShouldMatchers
-import akka.testkit.TestKit
 import akka.actor.{ActorContext, Props, ActorSystem}
 import bencoding.messages.{TrackerPeerDetails, TrackerResponse, MetaInfo, MetaInfoSample}
 import main.TestSystem
@@ -17,22 +14,13 @@ import akka.util.ByteString
 import org.mockito.Mockito._
 import org.mockito.Matchers.{eq => same, any}
 
-class TorrentTest(_system: ActorSystem) extends TestKit(_system) with TestSystem
-    with FunSuite with ShouldMatchers with BeforeAndAfterAll {
-
-  //need to provide a no-argument constructor
-  def this() = this(ActorSystem("TorrentTest"))
-
-  //since we are making our own actor system, make sure we use the same one
-  //within TestSystem by overriding testActorSystem here
-  override def testActorSystem = _system
-
-  override def afterAll() { _system.shutdown() }
+class TorrentTest(_system: ActorSystem) extends TestSystem(_system) {
+  def this() = this(ActorSystem("TrackerAnnouncerTest"))
 
   val peerId = "TestTorrentPeerId"
   val metaInfo = MetaInfo(MetaInfoSample.get_metainfo_file_contents)
 
-  def get_torrent = _system.actorOf(Props(
+  def get_torrent = testActorSystem.actorOf(Props(
       new Torrent(
         6881,
         peerId,

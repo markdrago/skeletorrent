@@ -14,8 +14,8 @@ class SkeletorrentSystem(conf: Conf, system: ActorSystem)
   with PeerAccepterComponent {
 
   override val httpClient = system.actorOf(Props(new HttpClient))
-  override val trackerAnnouncer = system.actorOf(Props(new TrackerAnnouncer), name="tracker-announcer")
+  override val trackerAnnouncer = system.actorOf(Props(new TrackerAnnouncer))
   override val torrentFactory = new TorrentFactory()
-  override val peerAccepter = system.actorOf(Props[PeerAccepterTcp], name="peer-accepter")
+  override val peerAccepter = system.actorOf(Props[PeerAccepterTcp])
   override val outboundPeerFactory = new OutboundPeerFactory()
 }

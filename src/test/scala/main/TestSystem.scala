@@ -1,27 +1,32 @@
 package main
 
 import tracker.{TrackerAnnouncerComponent, HttpClientComponent}
-import akka.testkit.{TestKit, TestProbe}
+import akka.testkit.{ImplicitSender, TestKit, TestProbe}
 import torrent.TorrentFactoryComponent
 import torrent.peer.{OutboundPeerFactory, OutboundPeerFactoryComponent, PeerAccepterComponent}
 import akka.actor.ActorSystem
-import org.scalatest.FunSuite
+import org.scalatest.{BeforeAndAfterAll, FunSuite}
 import org.scalatest.mock.MockitoSugar
+import org.scalatest.matchers.ShouldMatchers
 
-//TODO: start to break apart the wiring of this
-//TODO: at least separate wiring stuff from test running stuff
-
-trait TestSystem
-    extends HttpClientComponent
+class TestSystem(_system: ActorSystem)
+    extends TestKit(_system)
+    with HttpClientComponent
     with TrackerAnnouncerComponent
     with TorrentFactoryComponent
     with OutboundPeerFactoryComponent
     with PeerAccepterComponent
-    with FunSuite
-    with MockitoSugar {
-  this: TestKit =>
 
-  def testActorSystem: ActorSystem = ActorSystem("TestSystem")
+    with ImplicitSender
+    with FunSuite
+    with ShouldMatchers
+    with BeforeAndAfterAll
+    with MockitoSugar {
+
+  def this() = this(ActorSystem("TestSystem"))
+  def testActorSystem = _system
+
+  override def afterAll() { _system.shutdown() }
 
   val httpClientProbe = TestProbe()
   override val httpClient = httpClientProbe.ref

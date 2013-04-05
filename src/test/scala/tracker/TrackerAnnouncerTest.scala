@@ -12,20 +12,11 @@ import bencoding.messages.TrackerResponse
 import tracker.TrackerAnnouncer.{TrackerAnnounceResponseMsg, TrackerAnnounceFailure, TrackerAnnounceRequestMsg, TrackerRequest}
 import main.TestSystem
 
-class TrackerAnnouncerTest(_system: ActorSystem) extends TestKit(_system) with ImplicitSender
-  with FunSuite with ShouldMatchers with BeforeAndAfterAll with TestSystem {
-
-  //need to provide a no-argument constructor
+class TrackerAnnouncerTest(_system: ActorSystem) extends TestSystem(_system) {
   def this() = this(ActorSystem("TrackerAnnouncerTest"))
-
-  //since we are making our own actor system, make sure we use the same one
-  //within TestSystem by overriding testActorSystem here
-  override def testActorSystem = _system
 
   //replace the mock trackerAnnouncer in TestSystem with the real deal
   override val trackerAnnouncer = _system.actorOf(Props(new TrackerAnnouncer))
-
-  override def afterAll() { _system.shutdown() }
 
   test("TrackerAnnouncer replies with TrackerAnnounceResponseMsg on success") {
     trackerAnnouncer ! TrackerAnnounceRequestMsg(exampleTrackerRequest())
