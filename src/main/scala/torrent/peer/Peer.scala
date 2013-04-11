@@ -1,17 +1,22 @@
 package torrent.peer
 
-import akka.actor.{Props, Status, ActorRef, Actor}
+import akka.actor._
 import spray.io.{DefaultIOConnectionActor, EmptyPipelineStage, IOClientConnection}
-import spray.io.IOBridge.{Received, Connect, Connection, Closed}
-import spray.io.IOClientConnection.Connected
+import spray.io.IOBridge.{Connect, Connection}
 import akka.util.{ByteString, ByteStringBuilder}
-import torrent.Torrent.RegisterPeerWithTorrent
 import java.nio.ByteBuffer
 import utils.Utils
+import spray.io.IOClientConnection.Connected
+import spray.io.IOBridge.Received
+import spray.io.IOBridge.Closed
+import torrent.Torrent.RegisterPeerWithTorrent
+import akka.event.Logging
 
-sealed trait Peer extends Actor {
+sealed trait Peer extends Actor with ActorLogging {
   def connection: ActorRef
   def otherPeerId: ByteString
+
+  override val log = Logging(context.system, this)
 
   override def receive = {
     case Received(conn, buffer) => handleReceive(conn, buffer)
@@ -19,13 +24,13 @@ sealed trait Peer extends Actor {
     case _ => println("torrent peer got unknown message")
   }
 
-  private def handleReceive(conn: Connection, buffer: ByteBuffer) {
+  private[this] def handleReceive(conn: Connection, buffer: ByteBuffer) {
     println("torrent peer recieved data")
     println("from: " + otherPeerId.decodeString("UTF-8"))
     println("data: " + legibleData(ByteString(buffer)))
   }
 
-  protected def registerPeerWithTorrent(tag: TorrentStateTag) {
+  protected[this] def registerPeerWithTorrent(tag: TorrentStateTag) {
     tag.torrent ! RegisterPeerWithTorrent(self)
   }
 
@@ -48,25 +53,31 @@ class InboundPeer(val _conn: Connection) extends Peer {
 }
 
 class OutboundPeerConnection extends IOClientConnection
-class OutboundPeer(
-  val connection: ActorRef,
-  tag: TorrentStateTag,
-  val otherPeerId: ByteString,
-  host: String,
-  port: Int)
-    extends Peer {
 
-  connection ! Connect(host, port, tag)
+class OutboundPeer(
+    val connection: ActorRef,
+    tag: TorrentStateTag,
+    val otherPeerId: ByteString,
+    host: String,
+    port: Int)
+      extends Peer with ActorLogging {
+
+  override def preStart {
+    connection ! Connect(host, port, tag)
+  }
 
   override def receive = {
     case Connected(conn) => {
       context.become(super.receive)
       connectionComplete(conn)
     }
-    case Status.Failure(e) => println("failed to connect to peer")
+    case Status.Failure(e) => {
+      //TODO: kill this actor when unable to connect (actually complicated and interesting)
+      log.warning(s"Failed to connect to outbound peer: $host:$port")
+    }
   }
 
-  private def connectionComplete(connection: Connection) {
+  private[peer] def connectionComplete(connection: Connection) {
     val tag = connection.tag match {
       case t:TorrentStateTag => t
       case _ => throw new IllegalArgumentException("unexpected tag type")
@@ -75,11 +86,11 @@ class OutboundPeer(
     initiateHandshake(tag)
   }
 
-  private def initiateHandshake(tag: TorrentStateTag) {
+  private[peer] def initiateHandshake(tag: TorrentStateTag) {
     connection ! spray.io.IOConnection.Send(handshake(tag).asByteBuffer)
   }
 
-  private def handshake(tag: TorrentStateTag): ByteString = {
+  private[peer] def handshake(tag: TorrentStateTag): ByteString = {
     val title = "BitTorrent protocol"
     new ByteStringBuilder()
       .putByte(title.length.toByte)
