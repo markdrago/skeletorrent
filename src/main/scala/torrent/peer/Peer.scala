@@ -67,9 +67,9 @@ class OutboundPeer(
   }
 
   override def receive = {
-    case Connected(conn) => {
+    case Connected(connectionHandle) => {
       context.become(super.receive)
-      connectionComplete(conn)
+      connectionComplete(connectionHandle)
     }
     case Status.Failure(e) => {
       //TODO: kill this actor when unable to connect (actually complicated and interesting)
@@ -77,16 +77,19 @@ class OutboundPeer(
     }
   }
 
-  private[peer] def connectionComplete(connection: Connection) {
-    val tag = connection.tag match {
+  private[peer] def connectionComplete(connectionHandle: Connection) {
+    val tag = connectionHandle.tag match {
       case t:TorrentStateTag => t
-      case _ => throw new IllegalArgumentException("unexpected tag type")
+      case _ => {
+        log.warning("Unexpected tag type found in new outbound peer connection.")
+        throw new IllegalArgumentException("Unexpected tag type found in new outbound peer connection.")
+      }
     }
     registerPeerWithTorrent(tag)
     initiateHandshake(tag)
   }
 
-  private[peer] def initiateHandshake(tag: TorrentStateTag) {
+  private[this] def initiateHandshake(tag: TorrentStateTag) {
     connection ! spray.io.IOConnection.Send(handshake(tag).asByteBuffer)
   }
 
