@@ -3,7 +3,7 @@ package torrent.peer
 import main.TestSystem
 import akka.actor.{ActorRef, Props, ActorSystem}
 import akka.testkit.{TestActorRef, TestProbe, EventFilter}
-import akka.util.{Timeout, ByteString}
+import akka.util.ByteString
 import spray.io.IOBridge.{Connect, Connection}
 import scala.concurrent.duration._
 import com.typesafe.config.ConfigFactory

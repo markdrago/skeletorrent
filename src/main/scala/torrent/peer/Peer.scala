@@ -30,7 +30,7 @@ sealed trait Peer extends Actor with ActorLogging {
     println("data: " + legibleData(ByteString(buffer)))
   }
 
-  protected[this] def registerPeerWithTorrent(tag: TorrentStateTag) {
+  protected[peer] def registerPeerWithTorrent(tag: TorrentStateTag) {
     tag.torrent ! RegisterPeerWithTorrent(self)
   }
 
@@ -46,6 +46,7 @@ sealed trait Peer extends Actor with ActorLogging {
 }
 
 class InboundPeer(val _conn: Connection) extends Peer {
+  //TODO: inject a factory which creates these connection actors and then unit test that creation
   val connection = context.system.actorOf(Props(new DefaultIOConnectionActor(_conn, EmptyPipelineStage)))
 
   //TODO: parse handshake from inbound, get a hold of their peer id, verify infohash, etc.
