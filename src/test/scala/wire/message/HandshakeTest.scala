@@ -11,12 +11,10 @@ class HandshakeTest extends FunSuite with ShouldMatchers {
   val validHandshakeMessage = new ByteStringBuilder()
     .putByte(protoId.length.toByte)
     .putBytes(protoId.getBytes("UTF-8"))
-    .putBytes(Array.fill(4)(0.toByte))
-    .putBytes(Array.fill(4)(0xFF.toByte))
+    .putBytes(Array.fill(8)(0.toByte))
     .putBytes(infohash)
     .putBytes(peerid)
     .result()
-
 
   test("Handshake throws IllegalArgument when given blank ByteString") {
     val caught = intercept[IllegalArgumentException] {
@@ -54,5 +52,10 @@ class HandshakeTest extends FunSuite with ShouldMatchers {
   test("Handshake parses peerid") {
     val result = Handshake(validHandshakeMessage)
     result.peerid should be (ByteString(peerid))
+  }
+
+  test("Handshake can serialize correctly") {
+    val handshake = new Handshake(ByteString(infohash), ByteString(peerid))
+    handshake.serialize should be (validHandshakeMessage)
   }
 }

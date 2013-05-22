@@ -11,6 +11,7 @@ import spray.io.IOBridge.Received
 import spray.io.IOBridge.Closed
 import torrent.Torrent.RegisterPeerWithTorrent
 import akka.event.Logging
+import wire.message.Handshake
 
 sealed trait Peer extends Actor with ActorLogging {
   def connection: ActorRef
@@ -91,17 +92,7 @@ class OutboundPeer(
   }
 
   private[this] def initiateHandshake(tag: TorrentStateTag) {
-    connection ! spray.io.IOConnection.Send(handshake(tag).asByteBuffer)
-  }
-
-  private[peer] def handshake(tag: TorrentStateTag): ByteString = {
-    val title = "BitTorrent protocol"
-    new ByteStringBuilder()
-      .putByte(title.length.toByte)
-      .putBytes(title.getBytes("UTF-8"))
-      .putBytes(Array.fill(8)(0.toByte))
-      .putBytes(tag.infoHash.toArray)
-      .putBytes(tag.peerId.getBytes("UTF-8"))
-      .result()
+    val handshake = new Handshake(tag.infoHash, ByteString(tag.peerId))
+    connection ! spray.io.IOConnection.Send(handshake.serialize.asByteBuffer)
   }
 }

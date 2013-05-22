@@ -112,19 +112,4 @@ class OutboundPeerTest(_system: ActorSystem) extends TestSystem(_system) {
       }
     }
   }
-
-  test("OutboundPeer produces correct bittorrent protocol handshake") {
-    new Fixture {
-      val peerActor = getTestPeerRef.underlyingActor
-
-      val result = peerActor.handshake(tag)
-
-      val header = "BitTorrent protocol"
-      assert(result.startsWith(List(19.toByte)))
-      assert(result.drop(1).startsWith(header))
-      assert(result.drop(header.length + 1).startsWith(Array.fill(8)(0.toByte)))
-      assert(result.drop(header.length + 9).startsWith(tag.infoHash))
-      assert(result.drop(header.length + tag.infoHash.length + 9).startsWith(tag.peerId))
-    }
-  }
 }
