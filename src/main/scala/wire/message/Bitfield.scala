@@ -1,12 +1,33 @@
 package wire.message
 
-import akka.util.ByteString
-import scala.collection.immutable.BitSet
+import akka.util.{ByteStringBuilder, ByteString}
+import scala.collection.immutable.{SetProxy, BitSet}
+import java.nio.ByteOrder
 
-class Bitfield(pieces: Set[Int]) extends Message {
-  def serialize: ByteString = ???
-  def contains(x: Int) = pieces contains x
-  def isEmpty = pieces.isEmpty
+class Bitfield(pieces: Set[Int]) extends Message with SetProxy[Int] {
+  implicit val bo = ByteOrder.BIG_ENDIAN
+
+  def self: Set[Int] = pieces
+
+  def serialize: ByteString = {
+    val bits = getByteStringOfPieces
+    val length = bits.length + 1
+
+    new ByteStringBuilder()
+      .putInt(length)
+      .putByte(5)
+      .result() ++ bits
+  }
+
+  private def getByteStringOfPieces: ByteString = {
+    if (pieces.isEmpty) ByteString()
+    else {
+      val (byte, offset) = Bitfield.intToByteAndOffset(pieces.head)
+      val nextByteString = (new Bitfield(pieces.tail)).getByteStringOfPieces
+      val byteToPlace = (nextByteString.lift(offset).getOrElse(0.toByte) | byte).toByte
+      nextByteString.padTo(offset + 1, 0.toByte).updated(offset, byteToPlace)
+    }
+  }
 }
 
 object Bitfield extends MessageParser {
@@ -20,26 +41,30 @@ object Bitfield extends MessageParser {
     require(messageLength + 4 <= str.length,
       "Bitfield message claims to be longer than the buffer length")
 
-    //real bitfield will have length of (message length - 1) (for message type)
+    //bitfield component is one byte shorter than message as message has
+    //1 byte for msg type and the rest is the bitfield
     val bitfieldLength = messageLength - 1
 
     new Bitfield(
-      BitSet.fromBitMask(convertByteStringToLongSeq(str.drop(5).take(bitfieldLength)).toArray)
+      convertByteStringToSet(str.drop(5).take(bitfieldLength))
     )
   }
 
-  private[message] def convertByteStringToLongSeq(str: ByteString): List[Long] = {
-    def recur(str: ByteString): List[Long] = {
-      if (str.length == 0) Nil
-      else bytesToLong(str.take(4)) :: recur(str.drop(4))
-    }
+  //byte string has bits numbered from 0 at the left-most bit and going up towards the right
+  //if the bit is set it indicates that the bitfield contains that piece
+  //so, if only the 0th piece is available, the first byte will be 10000000
+  //if the 0th and the 3rd are available, the first byte will be 10010000, etc.
+  private[message] def convertByteStringToSet(str: ByteString, offset: Int = 0): Set[Int] =
+    if (str.isEmpty) BitSet()
+    else convertByteStringToSet(str.tail, offset + 1) ++ (byteToIntSet(str.head).map(_ + (offset * 8)))
 
-    val validStr =
-      if (str.length % 4 != 0)
-        ByteString(Array.fill(4 - (str.length % 4))(0.toByte)) ++ str
-      else
-        str
+  private[message] def byteToIntSet(b: Byte, shift: Int = 0): Set[Int] =
+    (for (shift <- 0 to 7 if ((0x80 >> shift) & b) != 0) yield shift).toSet
 
-    recur(validStr)
+  //convert an integer to a byte (with 1 bit set) and an int (offset of bytes from start)
+  //0 -> (1000000, 0)
+  //9 -> (0100000, 1)
+  private[message] def intToByteAndOffset(i: Int): (Byte, Int) = {
+    (((0x80 >> i % 8) & 0xFF).toByte, i / 8)
   }
 }

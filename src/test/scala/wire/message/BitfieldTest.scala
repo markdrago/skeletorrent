@@ -3,15 +3,16 @@ package wire.message
 import org.scalatest.matchers.ShouldMatchers
 import org.scalatest.FunSuite
 import akka.util.{ByteStringBuilder, ByteString}
+import java.nio.ByteOrder
 
 class BitfieldTest extends FunSuite with ShouldMatchers {
+  implicit val bo = ByteOrder.BIG_ENDIAN
+
   //bitfield message which indicates the 0th piece is available
   val validBitfieldMessage = new ByteStringBuilder()
-    .putBytes(Array.fill(3)(0.toByte))
+    .putInt(2)
     .putByte(5.toByte)
-    .putByte(5.toByte)
-    .putBytes(Array.fill(3)(0.toByte))
-    .putByte(1.toByte)
+    .putByte(128.toByte)
     .result()
 
   //bitfield which contains no information about pieces (seen often in wild)
@@ -49,6 +50,39 @@ class BitfieldTest extends FunSuite with ShouldMatchers {
     caught.getMessage should include ("longer than the buffer length")
   }
 
+  test("convertByteStringToSet when given empty string returns empty set") {
+    Bitfield.convertByteStringToSet(ByteString()) should be (Set.empty)
+  }
+
+  test("byteToIntSet works for empty byte") {
+    Bitfield.byteToIntSet(0) should be (Set.empty)
+  }
+
+  test("byteToIntSet works for non-empty byte") {
+    Bitfield.byteToIntSet(128.toByte) should be (Set(0))
+  }
+
+  test("byteToIntSet works for complex byte") {
+    Bitfield.byteToIntSet(170.toByte) should be (Set(0, 2, 4, 6))
+  }
+
+  test("convertByteStringToSet works for simple byte string") {
+    val input = new ByteStringBuilder()
+      .putBytes(Array.fill(1)(0xAB.toByte))
+      .result()
+    val result = Bitfield.convertByteStringToSet(input)
+    result should be (Set(0, 2, 4, 6, 7))
+  }
+
+  test("convertByteStringToSet works for multi-byte string") {
+    val input = new ByteStringBuilder()
+      .putBytes(Array.fill(1)(0xAB.toByte))
+      .putBytes(Array.fill(1)(0x88.toByte))
+      .result()
+    val result = Bitfield.convertByteStringToSet(input)
+    result should be (Set(0, 2, 4, 6, 7, 8, 12))
+  }
+
   test("Bitfield parser parses empty bitfield message correctly") {
     val result = Bitfield(validEmptyBitfieldMessage)
     result should be ('empty)
@@ -60,16 +94,11 @@ class BitfieldTest extends FunSuite with ShouldMatchers {
     result.contains(0) should be (true)
   }
 
-  //TODO: problem with padding on left/right, multiple of 4, etc.
   test("Bitfield parser parses bitfield message < 4 bytes in length correctly") {
     val validButShortBitfieldMessage = new ByteStringBuilder()
-      .putBytes(Array.fill(3)(0.toByte))
-      .putByte(4.toByte)
+      .putInt(2)
       .putByte(5.toByte)
-      .putByte(0.toByte)
-      .putByte(0.toByte)
-      .putByte(3.toByte)
-      //.putByte(3.toByte)
+      .putByte(0xC0.toByte)
       .result()
     val result = Bitfield(validButShortBitfieldMessage)
     result should not be ('empty)
@@ -78,32 +107,58 @@ class BitfieldTest extends FunSuite with ShouldMatchers {
     result.contains(2) should be (false)
   }
 
-  test("convertByteStringToLongSeq when given empty string returns empty array") {
-    Bitfield.convertByteStringToLongSeq(ByteString()) should be (Nil)
+  test("intToByteAndOffset works for first bit no offset (0)") {
+    val (byte, offset) = Bitfield.intToByteAndOffset(0)
+    byte should be (128.toByte)
+    offset should be (0)
   }
 
-  test("convertByteStringToLongSeq works for simple byte string (== 4 bytes)") {
-    val input = new ByteStringBuilder()
-      .putBytes(Array.fill(4)(0xAB.toByte))
-      .result()
-    val result = Bitfield.convertByteStringToLongSeq(input)
-    result should be (List(0xABABABABL))
+  test("intToByteAndOffset works for last bit no offset (7)") {
+    val (byte, offset) = Bitfield.intToByteAndOffset(7)
+    byte should be (1.toByte)
+    offset should be (0)
   }
 
-  test("convertByteStringToLongSeq works for short byte string (< 4 bytes)") {
-    val input = new ByteStringBuilder()
-      .putBytes(Array.fill(2)(0xAB.toByte))
-      .result()
-    val result = Bitfield.convertByteStringToLongSeq(input)
-    result should be (List(0x0000ABABL))
+  test("intToByteAndOffset works for first bit offset of 1 (8)") {
+    val (byte, offset) = Bitfield.intToByteAndOffset(8)
+    byte should be (128.toByte)
+    offset should be (1)
   }
 
-  test("convertByteStringToLongSeq works for long byte string (> 4 bytes)") {
-    val input = new ByteStringBuilder()
-      .putBytes(Array.fill(4)(0xAB.toByte))
-      .putBytes(Array.fill(4)(0xDE.toByte))
+  test("intToByteAndOffset works for middle bit larger offset (21)") {
+    val (byte, offset) = Bitfield.intToByteAndOffset(21)
+    byte should be (4.toByte)
+    offset should be (2)
+  }
+
+  test("serialize works for empty bitfield") {
+    val input = new Bitfield(Set.empty[Int])
+    val expected = new ByteStringBuilder()
+      .putBytes(Array.fill(3)(0.toByte))
+      .putByte(1)
+      .putByte(5) //type
       .result()
-    val result = Bitfield.convertByteStringToLongSeq(input)
-    result should be (List(0xABABABABL, 0xDEDEDEDEL))
+    input.serialize should be (expected)
+  }
+
+  test("serialize works for long bitfield with single piece set") {
+    val input = new Bitfield(Set[Int](30))
+    val expected = new ByteStringBuilder()
+      .putInt(5)
+      .putByte(5) //type
+      .putBytes(Array.fill(3)(0.toByte)) //move 8*3=24 bits (passed bit #23)
+      .putByte((0x80 >> 6).toByte) //set 30th bit (counting from 0 at the left)
+      .result()
+    input.serialize should be (expected)
+  }
+
+  test("serialize works for shorter bitfield with multiple pieces in set") {
+    val input = new Bitfield(Set[Int](1, 2, 3, 0))
+    val expected = new ByteStringBuilder()
+      .putInt(2)
+      .putByte(5) //type
+      .putByte(0xF0.toByte)  //11110000
+      .result()
+    input.serialize should be (expected)
   }
 }
