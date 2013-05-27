@@ -12,19 +12,20 @@ trait Message {
 trait MessageParser {
   def apply(str: ByteString): Message
 
-  //parse first 4 bytes of message in to an int as that is the prefixed length
-  protected[message] def getMessageLength(str: ByteString): Int = {
-    val length = bytesToLong(str.take(4))
-    require(length <= Int.MaxValue, "Message claims to be bigger than Int.MaxValue")
-    length.toInt
-  }
-
-  protected[message] def bytesToLong(str: ByteString): Long = {
-    require(str.length == 4, s"bytesToLong requires a 4-byte ByteString, but arg has length of ${str.length}")
+  //parse first 4 bytes of message in to an int
+  protected[message] def fourBytesToInt(str: ByteString): Int = {
+    require(str.length >= 4, s"fourBytesToInt requires at least a 4-byte ByteString, but arg has length of ${str.length}")
 
     //ANDing with 0xFF ensures that byte is interpreted as an unsigned int
-    str.foldLeft[Long](0L)((result: Long, b: Byte) =>
+    val result = str.take(4).foldLeft[Long](0L)((result: Long, b: Byte) =>
       (result * 256L) + (b & 0xFF)
     )
+
+    //BitTorrent spec specifies that 4 bytes is an unsigned int,
+    //but a bunch of things in skeletorrent/scala/etc. expect an int,
+    //(Seq.apply, max length of ByteString, etc.) so I made a few concessions
+    //skeletorrent will not support torrents with > 2.1B pieces for example  :-)
+    require(result <= Int.MaxValue, "Parsed 4-byte Long claims to be bigger than Int.MaxValue")
+    result.toInt
   }
 }

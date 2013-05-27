@@ -32,7 +32,7 @@ object Bitfield extends MessageParser {
     require(str.length >= 5, "Bitfield message is too short to possibly contain full message")
     require(str(4).toInt == 5, "Bitfield message must have message type of '5'")
 
-    val messageLength = getMessageLength(str)
+    val messageLength = fourBytesToInt(str)
     require(messageLength >= 1,
       "Bitfield message claims length less than minimum of 1")
     require(messageLength + 4 <= str.length,

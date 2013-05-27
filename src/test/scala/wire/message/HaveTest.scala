@@ -8,6 +8,14 @@ import java.nio.ByteOrder
 class HaveTest extends FunSuite with ShouldMatchers {
   implicit val bo = ByteOrder.BIG_ENDIAN
 
+  def haveByteStringWithPiece(index: Int) = {
+    new ByteStringBuilder()
+      .putInt(5)
+      .putByte(4.toByte)
+      .putInt(index)
+      .result()
+  }
+
   test("Have parser throws IAE if length is < 5") {
     val caught = intercept[IllegalArgumentException] {
       Have(ByteString())
@@ -39,24 +47,18 @@ class HaveTest extends FunSuite with ShouldMatchers {
   }
 
   test("Have parser works for finding piece 0") {
-    val result = Have(new ByteStringBuilder()
-      .putInt(5)
-      .putByte(4.toByte)
-      .putInt(0)
-      .result()
-    )
-
-    result should be (new Have(0))
+    Have(haveByteStringWithPiece(0)) should be (new Have(0))
   }
 
   test("Have parser works for finding large piece number") {
-    val result = Have(new ByteStringBuilder()
-      .putInt(5)
-      .putByte(4.toByte)
-      .putInt(1023)
-      .result()
-    )
+    Have(haveByteStringWithPiece(1023)) should be (new Have(1023))
+  }
 
-    result should be (new Have(1023))
+  test("Have serializer works when piece is 0") {
+    (new Have(0)).serialize should be (haveByteStringWithPiece(0))
+  }
+
+  test("Have serializer works with larger piece number") {
+    (new Have(1023)).serialize should be (haveByteStringWithPiece(1023))
   }
 }
