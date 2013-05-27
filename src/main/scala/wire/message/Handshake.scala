@@ -2,7 +2,7 @@ package wire.message
 
 import akka.util.{ByteStringBuilder, ByteString}
 
-class Handshake(val infohash: ByteString, val peerid: ByteString) extends Message {
+case class Handshake(infohash: ByteString, peerid: ByteString) extends Message {
   def serialize: ByteString = {
     new ByteStringBuilder()
       .putByte(Handshake.protocolId.length.toByte)

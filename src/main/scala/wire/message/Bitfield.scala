@@ -2,11 +2,8 @@ package wire.message
 
 import akka.util.{ByteStringBuilder, ByteString}
 import scala.collection.immutable.{SetProxy, BitSet}
-import java.nio.ByteOrder
 
-class Bitfield(pieces: Set[Int]) extends Message with SetProxy[Int] {
-  implicit val bo = ByteOrder.BIG_ENDIAN
-
+case class Bitfield(pieces: Set[Int]) extends Message with SetProxy[Int] {
   def self: Set[Int] = pieces
 
   def serialize: ByteString = {

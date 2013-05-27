@@ -1,8 +1,11 @@
 package wire.message
 
 import akka.util.ByteString
+import java.nio.ByteOrder
 
 trait Message {
+  implicit val bo = ByteOrder.BIG_ENDIAN
+
   def serialize: ByteString
 }
 
