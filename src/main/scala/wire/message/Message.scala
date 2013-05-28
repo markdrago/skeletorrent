@@ -48,6 +48,6 @@ trait SimpleMessageValidator extends MessageParser {
     val messageLength = fourBytesToInt(str)
     require(messageLength == 1, s"$typeName messages require claimed size of 1, but $messageLength found")
 
-    require(str(4) == 0, s"$typeName message requires type of $messageType, but ${str(4)} found")
+    require(str(4) == messageType, s"$typeName message requires type of $messageType, but ${str(4)} found")
   }
 }
