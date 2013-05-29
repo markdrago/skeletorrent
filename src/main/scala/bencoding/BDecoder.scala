@@ -17,7 +17,7 @@ class BDecoder {
     new BEncodedString(encoded.slice(digits.length + 1, digits.length + len + 1))
   }
 
-  def checkStringFormat(bytes: ByteString) = {
+  def checkStringFormat(bytes: ByteString) {
     //must start with a bunch of digits then a :
     require(bytes.length > 0, "bencoded string must not be of length 0")
     require(byteIsDigit(bytes(0)), "bencoded string must start with a digit")
@@ -96,15 +96,14 @@ class BDecoder {
    * @param encoded a data structure which has been bencoded
    * @return a new BEncodedItem
    */
-  def decodeItem(encoded: ByteString): BEncodedItem = {
-    return encoded(0).toChar match {
+  def decodeItem(encoded: ByteString): BEncodedItem =
+    encoded(0).toChar match {
       case 'i' => decodeInteger(encoded)
       case 'l' => decodeList(encoded)
       case 'd' => decodeMap(encoded)
       case n if '0' to '9' contains n => decodeString(encoded)
       case _ => throw new IllegalArgumentException("unidentifed format for bencoded item, expecting first character of [ild0-9], found: " + encoded(0))
     }
-  }
 
   /* Overload decodeItem to accept a string and assume it is UTF-8 */
   def decodeItem(encoded: String): BEncodedItem = {

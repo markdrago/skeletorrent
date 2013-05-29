@@ -12,5 +12,5 @@ case class BEncodedList(value: List[BEncodedItem] = List()) extends BEncodedItem
 
   override def serialize = ByteString("l") ++ value.flatMap(_.serialize) ++ ByteString("e")
 
-  override def foreach[A](f: BEncodedItem => A) = value.foreach(f)
+  override def foreach[A](f: BEncodedItem => A) { value.foreach(f) }
 }

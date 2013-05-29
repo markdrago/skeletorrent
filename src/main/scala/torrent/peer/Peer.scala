@@ -3,7 +3,7 @@ package torrent.peer
 import akka.actor._
 import spray.io.{DefaultIOConnectionActor, EmptyPipelineStage, IOClientConnection}
 import spray.io.IOBridge.{Connect, Connection}
-import akka.util.{ByteString, ByteStringBuilder}
+import akka.util.ByteString
 import java.nio.ByteBuffer
 import utils.Utils
 import spray.io.IOClientConnection.Connected
@@ -64,7 +64,7 @@ class OutboundPeer(
     port: Int)
       extends Peer with ActorLogging {
 
-  override def preStart {
+  override def preStart() {
     connection ! Connect(host, port, tag)
   }
 
