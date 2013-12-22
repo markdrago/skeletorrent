@@ -7,7 +7,7 @@ import utils.Utils
 
 class Conf(arguments: Seq[String]) extends ScallopConf(arguments) {
   val metainfoFileName = trailArg[String]("metainfoFileName", required=true)
-  verify()
+  //verify()
 }
 
 object Main {

@@ -1,7 +1,6 @@
 package torrent
 
 import akka.util.ByteString
-import peer.PeerAccepterComponent
 import scala.Predef.String
 import util.Random
 import bencoding.messages.MetaInfo
@@ -10,8 +9,7 @@ import akka.actor.{ActorRef, Props, ActorSystem}
 import torrent.peer.OutboundPeerFactoryComponent
 
 trait TorrentFactoryComponent {
-  this: PeerAccepterComponent
-  with TrackerAnnouncerComponent
+  this: TrackerAnnouncerComponent
   with OutboundPeerFactoryComponent =>
   val torrentFactory: TorrentFactory
 
@@ -24,7 +22,6 @@ trait TorrentFactoryComponent {
           port,
           generatePeerId,
           MetaInfo.apply(metainfoString),
-          peerAccepter,
           trackerAnnouncer,
           outboundPeerFactory
         )

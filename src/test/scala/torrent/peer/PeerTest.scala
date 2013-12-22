@@ -28,13 +28,13 @@ class PeerTest(_system: ActorSystem) extends TestSystem(_system) {
 
     def getPeer = testActorSystem.actorOf(
       Props(
-        new OutboundPeer(connection.ref, tag, otherPeerId, host, port).asInstanceOf[Peer]
+        new OutboundPeer(tag, otherPeerId, host, port).asInstanceOf[Peer]
       )
     )
 
     def getTestPeerRef = TestActorRef[Peer](
       Props(
-        new OutboundPeer(connection.ref, tag, otherPeerId, host, port)
+        new OutboundPeer(tag, otherPeerId, host, port)
       )
     )
   }

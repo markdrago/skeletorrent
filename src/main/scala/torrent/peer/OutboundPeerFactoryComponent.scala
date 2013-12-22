@@ -13,7 +13,7 @@ class OutboundPeerFactory {
              peerId: ByteString,
              host: String,
              port: Int) {
-    val conn = context.actorOf(Props[OutboundPeerConnection])
-    context.actorOf(Props(new OutboundPeer(conn, tag, peerId, host, port)))
+    //val conn = context.actorOf(Props[OutboundPeerConnection])
+    context.actorOf(Props(new OutboundPeer(tag, peerId, host, port)))
   }
 }

@@ -1,17 +1,18 @@
 package torrent.peer
 
 import akka.actor._
-import spray.io.{DefaultIOConnectionActor, EmptyPipelineStage, IOClientConnection}
-import spray.io.IOBridge.{Connect, Connection}
 import akka.util.ByteString
-import java.nio.ByteBuffer
 import utils.Utils
-import spray.io.IOClientConnection.Connected
-import spray.io.IOBridge.Received
-import spray.io.IOBridge.Closed
-import torrent.Torrent.RegisterPeerWithTorrent
 import akka.event.Logging
 import wire.message.Handshake
+import akka.io.Tcp._
+import akka.io.Tcp
+import akka.io.IO
+import java.net.{InetAddress, InetSocketAddress}
+import akka.io.Tcp.Connected
+import akka.io.Tcp.Connect
+import torrent.Torrent.RegisterPeerWithTorrent
+import akka.io.Tcp.Received
 
 sealed trait Peer extends Actor with ActorLogging {
   def connection: ActorRef
@@ -20,15 +21,15 @@ sealed trait Peer extends Actor with ActorLogging {
   override val log = Logging(context.system, this)
 
   override def receive = {
-    case Received(conn, buffer) => handleReceive(conn, buffer)
-    case Closed(_, _) => println("torrent peer got message to close")
+    case Received(buffer) => handleReceive(buffer)
+    case PeerClosed => println("torrent peer got message to close")
     case _ => println("torrent peer got unknown message")
   }
 
-  private[this] def handleReceive(conn: Connection, buffer: ByteBuffer) {
+  private[this] def handleReceive(buffer: ByteString) {
     println("torrent peer recieved data")
     println("from: " + otherPeerId.decodeString("UTF-8"))
-    println("data: " + legibleData(ByteString(buffer)))
+    println("data: " + legibleData(buffer))
   }
 
   protected[peer] def registerPeerWithTorrent(tag: TorrentStateTag) {
@@ -46,6 +47,7 @@ sealed trait Peer extends Actor with ActorLogging {
   }
 }
 
+/*
 class InboundPeer(val _conn: Connection) extends Peer {
   //TODO: inject a factory which creates these connection actors and then unit test that creation
   val connection = context.system.actorOf(Props(new DefaultIOConnectionActor(_conn, EmptyPipelineStage)))
@@ -53,46 +55,45 @@ class InboundPeer(val _conn: Connection) extends Peer {
   //TODO: parse handshake from inbound, get a hold of their peer id, verify infohash, etc.
   val otherPeerId = ByteString("originally inbound")
 }
-
-class OutboundPeerConnection extends IOClientConnection
+*/
 
 class OutboundPeer(
-    val connection: ActorRef,
+    //val connection: ActorRef,
     tag: TorrentStateTag,
     val otherPeerId: ByteString,
     host: String,
     port: Int)
       extends Peer with ActorLogging {
 
+  //TODO: horrible
+  var connection: ActorRef = null
+
   override def preStart() {
-    connection ! Connect(host, port, tag)
+    //connection ! Connect(host, port, tag)
+    IO(Tcp)(context.system) ! Connect(new InetSocketAddress(InetAddress.getByName(host), port))
   }
 
   override def receive = {
-    case Connected(connectionHandle) => {
+    case Connected(remote, local) => {
+      connection = sender
       context.become(super.receive)
-      connectionComplete(connectionHandle)
+      connectionComplete()
     }
     case Status.Failure(e) => {
+      //TODO: probably not what akka io does anymore
       //TODO: kill this actor when unable to connect (actually complicated and interesting)
       log.warning(s"Failed to connect to outbound peer: $host:$port")
     }
   }
 
-  private[peer] def connectionComplete(connectionHandle: Connection) {
-    val tag = connectionHandle.tag match {
-      case t:TorrentStateTag => t
-      case _ => {
-        log.warning("Unexpected tag type found in new outbound peer connection.")
-        throw new IllegalArgumentException("Unexpected tag type found in new outbound peer connection.")
-      }
-    }
+  private[peer] def connectionComplete() {
     registerPeerWithTorrent(tag)
     initiateHandshake(tag)
   }
 
   private[this] def initiateHandshake(tag: TorrentStateTag) {
     val handshake = new Handshake(tag.infoHash, ByteString(tag.peerId))
-    connection ! spray.io.IOConnection.Send(handshake.serialize.asByteBuffer)
+    //TODO: probably want to do some acking
+    connection ! Write(handshake.serialize, NoAck)
   }
 }

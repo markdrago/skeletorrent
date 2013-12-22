@@ -17,22 +17,22 @@ class BDecoderTest extends FunSuite with BeforeAndAfter {
 
   test("decodeString can decode a simple bencoded string") {
     val result = bdecoder.decodeString(ByteString("5:hello"))
-    expectResult("hello") { result.toString }
+    assertResult("hello") { result.toString }
   }
 
   test("decodeString can decode a longer bencoded string with trailing characters") {
     val result = bdecoder.decodeString(bs("25:" + ("abcde" * 5) + "fghijkl"))
-    expectResult("abcde" * 5) { result.toString }
-    expectResult(28) { result.encodedLength }
+    assertResult("abcde" * 5) { result.toString }
+    assertResult(28) { result.encodedLength }
   }
 
   test("decodeString can decode a byte sequence which is not a utf8 string") {
     val header = "5:".getBytes("UTF-8").toSeq
     val expected = Seq(0, 240, 221, 32, 17).map(_.toByte)
     val result = bdecoder.decodeString(header union expected)
-    expectResult(expected.length) { result.value.length }
-    expectResult(expected) { result.value }
-    expectResult(expected.length + 2) { result.encodedLength }
+    assertResult(expected.length) { result.value.length }
+    assertResult(expected) { result.value }
+    assertResult(expected.length + 2) { result.encodedLength }
   }
 
   test("decodeString throws illegal argument if given a string not starting with digit") {
@@ -85,22 +85,22 @@ class BDecoderTest extends FunSuite with BeforeAndAfter {
 
   test("decodeInteger can decode an integer") {
     val result = bdecoder.decodeInteger(bs("i12345e"))
-    expectResult(12345) { result.value }
+    assertResult(12345) { result.value }
   }
 
   test("decodeInteger can decode a 0") {
     val result = bdecoder.decodeInteger(bs("i0e"))
-    expectResult(0) { result.value }
+    assertResult(0) { result.value }
   }
 
   test("decodeInteger can decode a negative number") {
     val result = bdecoder.decodeInteger(bs("i-25e"))
-    expectResult(-25) { result.value }
+    assertResult(-25) { result.value }
   }
 
   test("decodeInteger can decode an int when there are extra characters at the end") {
     val result = bdecoder.decodeInteger(bs("i123eabc"))
-    expectResult(123) { result.value }
+    assertResult(123) { result.value }
   }
 
   test("decodeInteger throws illegal argument for negative 0") {
@@ -117,15 +117,15 @@ class BDecoderTest extends FunSuite with BeforeAndAfter {
 
   test("decodeList can decode list with one element") {
     val result = bdecoder.decodeList(bs("l5:helloe"))
-    expectResult("hello") { result.value.head.asInstanceOf[BEncodedString].toString }
+    assertResult("hello") { result.value.head.asInstanceOf[BEncodedString].toString }
   }
 
   test("decodeList can decode list with more than one element") {
     val encoded = "l5:helloi123e3:byee"
     val result = bdecoder.decodeList(bs(encoded))
-    expectResult("hello") { result.value(0).asInstanceOf[BEncodedString].toString }
-    expectResult(123) { result.value(1).asInstanceOf[BEncodedInt].value }
-    expectResult("bye") { result.value(2).asInstanceOf[BEncodedString].toString }
+    assertResult("hello") { result.value(0).asInstanceOf[BEncodedString].toString }
+    assertResult(123) { result.value(1).asInstanceOf[BEncodedInt].value }
+    assertResult("bye") { result.value(2).asInstanceOf[BEncodedString].toString }
   }
 
   test("decodeMap throws illegal argument if given string that does not begin with 'd'") {
@@ -139,22 +139,22 @@ class BDecoderTest extends FunSuite with BeforeAndAfter {
   test("decodeMap can decode a simple map") {
     val encoded = bs("d1:a1:be")
     val result = bdecoder.decodeMap(encoded)
-    expectResult(1) {result.value.size}
+    assertResult(1) {result.value.size}
 
     val expected_value = new BEncodedString(bs("b"))
-    expectResult(expected_value) { result.value.get("a").get }
+    assertResult(expected_value) { result.value.get("a").get }
   }
 
   test("decodeMap can decode a complex map") {
     val encoded = bs("d1:k" + "d2:ik1:ae" + "e")
     val result = bdecoder.decodeMap(encoded)
-    expectResult(1) { result.value.size }
+    assertResult(1) { result.value.size }
 
     val inner = result.value.get("k").get.asInstanceOf[BEncodedMap]
-    expectResult(1) { inner.value.size }
+    assertResult(1) { inner.value.size }
 
     val expected_inner_value = new BEncodedString(bs("a"))
-    expectResult(expected_inner_value) { inner.value.get("ik").get }
+    assertResult(expected_inner_value) { inner.value.get("ik").get }
   }
 
   test("decodeItem throws illegal argument if given non-sensical encoded string") {
@@ -165,9 +165,9 @@ class BDecoderTest extends FunSuite with BeforeAndAfter {
     val decoded = bdecoder.decodeItem(get_metainfo_file_contents)
     val decodedMap = decoded.asInstanceOf[BEncodedMap]
 
-    expectResult(false) { decodedMap.get("announce").isEmpty }
+    assertResult(false) { decodedMap.get("announce").isEmpty }
     val actual_announce = decodedMap.get("announce").get.toString
-    expectResult("http://www.legaltorrents.com:7070/announce") { actual_announce }
+    assertResult("http://www.legaltorrents.com:7070/announce") { actual_announce }
   }
 
   def get_metainfo_file_contents: ByteString = {

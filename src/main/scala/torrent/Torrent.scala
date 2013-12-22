@@ -1,21 +1,20 @@
 package torrent
 
 import akka.actor.{ActorLogging, ActorRef, Actor}
-import peer.{OutboundPeerFactory, TorrentStateTag}
+import torrent.peer.{OutboundPeerFactory, TorrentStateTag}
 import akka.util.{ByteString, Timeout}
 import concurrent.ExecutionContext
 import java.net.InetSocketAddress
 import torrent.Torrent._
 import bencoding.messages.{TrackerResponse, MetaInfo}
-import spray.io.IOBridge.Bind
-import spray.io.IOServer.Bound
+import akka.io.Tcp.{Connected, Bind, Bound}
 import concurrent.duration._
 import tracker.TrackerAnnouncer.{TrackerRequest, TrackerAnnounceRequestMsg, TrackerAnnounceResponseMsg}
+import akka.io.{IO, Tcp}
 
 class Torrent(val port: Int,
               val peerId: String,
               val metainfo: MetaInfo,
-              peerAccepter: ActorRef,
               trackerAnnouncer: ActorRef,
               outboundPeerFactory: OutboundPeerFactory)
       extends Actor with ActorLogging {
@@ -32,11 +31,12 @@ class Torrent(val port: Int,
   private def uninitializedState: Receive = {
     case TorrentStartMsg() =>
       context.become(awaitingBindingState)
-      peerAccepter ! Bind(new InetSocketAddress(port), 100, new TorrentStateTag(self, metainfo.infoHash, peerId))
+      //peerAccepter ! Bind(new InetSocketAddress(port), 100, new TorrentStateTag(self, metainfo.infoHash, peerId))
+      IO(Tcp)(context.system) ! Bind(self, new InetSocketAddress(port))
   }
 
   private def awaitingBindingState: Receive = {
-    case Bound(_, _) =>
+    case Bound(_) =>
       context.become(steadyState)
       trackerAnnouncer ! TrackerAnnounceRequestMsg(TrackerRequest(
         metainfo.trackerUrl,
@@ -52,6 +52,15 @@ class Torrent(val port: Int,
   private def steadyState: Receive = {
     case TrackerAnnounceResponseMsg(resp) => handleTrackerResponse(resp)
     case RegisterPeerWithTorrent(peer) => registerPeer(peer)
+    case c @ Connected(remote, local) => {
+      //TODO: uniquify actor name
+      //TODO: for that matter, support inbound at all
+      /*
+      val handler = context.system.actorOf(Props[InboundPeer], "peer:inbound")
+      val connection = sender
+      connection ! Register(handler)
+      */
+    }
   }
 
   private def handleTrackerResponse(resp: TrackerResponse) {

@@ -1,10 +1,9 @@
 package bencoding
 
-import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.{FunSuite, Matchers}
 import akka.util.ByteString
 
-class BEncoderTest extends FunSuite with ShouldMatchers {
+class BEncoderTest extends FunSuite with Matchers {
   test("encodeList can create a simple bencoded list of integers") {
     val encoded = (new BEncoder).encodeList(List(1, 2))
     val expected = (new BDecoder).decodeItem("li1ei2ee")

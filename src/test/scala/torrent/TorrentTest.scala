@@ -5,15 +5,14 @@ import bencoding.messages.{TrackerPeerDetails, TrackerResponse, MetaInfo, MetaIn
 import main.TestSystem
 import peer.TorrentStateTag
 import torrent.Torrent.{RegisterPeerWithTorrent, TorrentStartMsg}
-import spray.io.IOBridge.Bind
 import concurrent.duration._
 import java.net.InetSocketAddress
 import tracker.TrackerAnnouncer.{TrackerAnnounceResponseMsg, TrackerRequest, TrackerAnnounceRequestMsg}
-import spray.io.IOServer.Bound
 import akka.util.ByteString
 import org.mockito.Mockito._
 import org.mockito.Matchers.{eq => same, any}
-import akka.testkit.TestActorRef
+import akka.testkit.{TestProbe, TestActorRef}
+import akka.io.Tcp.Bound
 
 class TorrentTest(_system: ActorSystem) extends TestSystem(_system) {
   def this() = this(ActorSystem("TrackerAnnouncerTest"))
@@ -26,23 +25,12 @@ class TorrentTest(_system: ActorSystem) extends TestSystem(_system) {
         6881,
         peerId,
         metaInfo,
-        peerAccepter,
         trackerAnnouncer,
         outboundPeerFactory
       )
     )
 
-  test("torrent sends binding message to peerAccepterProbe after receiving init message") {
-    val torrent = get_torrent
-    torrent ! TorrentStartMsg()
-    peerAccepterProbe.expectMsg[Bind](1000.millis,
-      Bind(
-        new InetSocketAddress(6881),
-        100,
-        TorrentStateTag(torrent, metaInfo.infoHash, peerId)
-      )
-    )
-  }
+  //TODO: inject fake IO(Tcp) and verify that Torrent sends a Bind message correctly
 
   test("torrent sends tracker announce request after receiving bound message") {
     //get torrent and put it in awaitingBinding state
@@ -50,7 +38,7 @@ class TorrentTest(_system: ActorSystem) extends TestSystem(_system) {
     torrent ! TorrentStartMsg()
 
     //send bound message and check for resulting message to tracker announcer
-    torrent ! Bound(new InetSocketAddress(6881), null)
+    torrent ! Bound(new InetSocketAddress(6881))
     trackerAnnouncerProbe.expectMsg[TrackerAnnounceRequestMsg](1000.millis,
       TrackerAnnounceRequestMsg(TrackerRequest(
         metaInfo.trackerUrl,
@@ -66,7 +54,7 @@ class TorrentTest(_system: ActorSystem) extends TestSystem(_system) {
     //get torrent and put it in steady state
     val torrent = get_torrent
     torrent ! TorrentStartMsg()
-    torrent ! Bound(null, null)
+    torrent ! Bound(null)
 
     //send tracker response message and check for interaction with outbound peer factory mock
     val peers = TrackerPeerDetails(ByteString("peerid"), "1.2.3.4", 6881) :: Nil
@@ -86,21 +74,15 @@ class TorrentTest(_system: ActorSystem) extends TestSystem(_system) {
     //get torrent and put it in stead state
     val torrent = get_torrent
     torrent ! TorrentStartMsg()
-    torrent ! Bound(null, null)
+    torrent ! Bound(null)
 
     torrent.underlyingActor.peers should be ('empty)
 
     //send tracker peer registration message
-    val peer = system.actorOf(Props(
-      new Actor {
-        def receive = {
-          case _ => null
-        }
-      }
-    ))
-    torrent ! RegisterPeerWithTorrent(peer)
+    val peer = TestProbe()
+    torrent ! RegisterPeerWithTorrent(peer.ref)
 
-    torrent.underlyingActor.peers should contain (peer)
+    torrent.underlyingActor.peers should contain (peer.ref)
     torrent.underlyingActor.peers should have length(1)
   }
 }

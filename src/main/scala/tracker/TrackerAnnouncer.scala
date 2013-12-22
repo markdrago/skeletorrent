@@ -1,8 +1,11 @@
 package tracker
 
+import akka.io.IO
+import spray.can.Http
+import spray.http._
+import HttpMethods._
 import akka.actor.{ActorRef, Actor}
 import akka.pattern.{ask, pipe}
-import spray.httpx.RequestBuilding._
 import spray.http.HttpResponse
 import concurrent.ExecutionContext
 import akka.util.{ByteString, Timeout}
@@ -25,13 +28,13 @@ trait TrackerAnnouncerComponent {
     }
 
     def announceToTracker(sender: ActorRef, url: String) {
-      ask(httpClient, Get(url))
+      ask(httpClient, HttpRequest(GET, Uri(url)))
         .mapTo[HttpResponse]
         .map {
           response =>
             if (response.status.isSuccess)
               TrackerAnnounceResponseMsg(
-                TrackerResponse(ByteString(response.entity.buffer))
+                TrackerResponse(ByteString(response.entity.asString))
               )
             else
               new TrackerAnnounceFailure(s"Non-successful response from tracker GET Request: $url")

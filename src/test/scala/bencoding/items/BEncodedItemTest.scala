@@ -1,11 +1,10 @@
 package bencoding.items
 
 import scala.language.reflectiveCalls
-import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.{FunSuite, Matchers}
 import akka.util.ByteString
 
-class BEncodedItemTest extends FunSuite with ShouldMatchers {
+class BEncodedItemTest extends FunSuite with Matchers {
 
   def fixture =
     new {
@@ -37,11 +36,11 @@ class BEncodedItemTest extends FunSuite with ShouldMatchers {
   }
 
   test("BEncodedInt encodedLength works") {
-    expectResult(7) { new BEncodedInt(12345).encodedLength }
+    assertResult(7) { new BEncodedInt(12345).encodedLength }
   }
 
   test("BEncodedInt encodedLength works with a negative number") {
-    expectResult(5) { new BEncodedInt(-25).encodedLength }
+    assertResult(5) { new BEncodedInt(-25).encodedLength }
   }
 
   test("BEncodedInt serialize works for positive number") {
@@ -61,11 +60,11 @@ class BEncodedItemTest extends FunSuite with ShouldMatchers {
   }
 
   test("BEncodedString encodedLength works") {
-    expectResult(7) { BEncodedString.fromString("hello").encodedLength }
+    assertResult(7) { BEncodedString.fromString("hello").encodedLength }
   }
 
   test("BEncodedString encodedLength works for multi-byte utf8 chars") {
-    expectResult(13) { BEncodedString.fromString("lambda: λ").encodedLength }
+    assertResult(13) { BEncodedString.fromString("lambda: λ").encodedLength }
   }
 
   test("BEncodedString equals method works") {
@@ -106,13 +105,13 @@ class BEncodedItemTest extends FunSuite with ShouldMatchers {
 
   test("BEncodedList encodedLength works") {
     val f = fixture
-    expectResult(8) { f.list_a.encodedLength }
+    assertResult(8) { f.list_a.encodedLength }
   }
 
   test("BEncodedList can have its elements retrieved") {
     val f = fixture
-    expectResult(f.int_a) { f.list_a(0) }
-    expectResult(f.str_a) { f.list_a(1) }
+    assertResult(f.int_a) { f.list_a(0) }
+    assertResult(f.str_a) { f.list_a(1) }
   }
 
   test("BEncodedList serialize works for a simple mixed list") {
@@ -145,12 +144,12 @@ class BEncodedItemTest extends FunSuite with ShouldMatchers {
 
   test("BEncodedMap encodedLength works") {
     val f = fixture
-    expectResult(8) { f.map_a.encodedLength }
+    assertResult(8) { f.map_a.encodedLength }
   }
 
   test("BEncodedMap get works") {
     val f = fixture
-    expectResult(f.str_a) { f.map_a.get("a").get }
+    assertResult(f.str_a) { f.map_a.get("a").get }
   }
 
   test("BEncodedMap serialize works for a simple dictionary") {
