@@ -1,12 +1,11 @@
 package main
 
-import org.scalatest.matchers.ShouldMatchers
-import org.scalatest.FunSuite
+import org.scalatest.{Matchers, FunSuite}
 
-class MainTest extends FunSuite with ShouldMatchers {
-  test("conf can find metainfo filename with no other parameters") {
-    val conf = new Conf(List("/tmp/metainfo.torrent").toSeq)
-    conf.metainfoFileName should be ('defined)
-    conf.metainfoFileName() should be ("/tmp/metainfo.torrent")
+class MainTest extends FunSuite with Matchers {
+  test("argparser can find metainfo filename with no other parameters") {
+    val argparser = new ArgParser(List("/tmp/metainfo.torrent").toSeq)
+    argparser.metainfoFileName should be('defined)
+    argparser.metainfoFileName() should be("/tmp/metainfo.torrent")
   }
 }

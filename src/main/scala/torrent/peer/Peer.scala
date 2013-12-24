@@ -11,7 +11,7 @@ import akka.io.IO
 import java.net.{InetAddress, InetSocketAddress}
 import akka.io.Tcp.Connected
 import akka.io.Tcp.Connect
-import torrent.Torrent.RegisterPeerWithTorrent
+import torrent.TorrentActor.RegisterPeerWithTorrent
 import akka.io.Tcp.Received
 
 sealed trait Peer extends Actor with ActorLogging {
@@ -57,23 +57,33 @@ class InboundPeer(val _conn: Connection) extends Peer {
 }
 */
 
-class OutboundPeer(
-    //val connection: ActorRef,
-    tag: TorrentStateTag,
-    val otherPeerId: ByteString,
-    host: String,
-    port: Int)
-      extends Peer with ActorLogging {
+object OutboundPeer {
+  case class OutboundPeerInit(tag: TorrentStateTag, otherPeerId: ByteString, host: String, port: Int)
+}
+
+class OutboundPeer() extends Peer with ActorLogging {
+  import OutboundPeer._
 
   //TODO: horrible
   var connection: ActorRef = null
+  var tag: TorrentStateTag = null
+  var otherPeerId: ByteString = null
+  var host: String = null
+  var port: Int = 0
 
-  override def preStart() {
+  override def receive: Receive = {
     //connection ! Connect(host, port, tag)
-    IO(Tcp)(context.system) ! Connect(new InetSocketAddress(InetAddress.getByName(host), port))
+    case OutboundPeerInit(tagMsg, otherPeerIdMsg, hostMsg, portMsg) => {
+      tag = tagMsg
+      otherPeerId = otherPeerIdMsg
+      host = hostMsg
+      port = portMsg
+      IO(Tcp)(context.system) ! Connect(new InetSocketAddress(InetAddress.getByName(host), port))
+      context.become(waitForConnection)
+    }
   }
 
-  override def receive = {
+  def waitForConnection: Receive = {
     case Connected(remote, local) => {
       connection = sender
       context.become(super.receive)

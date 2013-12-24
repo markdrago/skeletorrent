@@ -1,20 +1,21 @@
 package torrent.peer
 
-import akka.actor.{Props, ActorSystem}
-import main.TestSystem
-import com.typesafe.config.ConfigFactory
-import akka.testkit.{TestActorRef, TestProbe}
+import akka.actor.{ActorRef, Props, ActorSystem}
+import akka.testkit.{ImplicitSender, TestKit, TestActorRef, TestProbe}
 import akka.util.ByteString
-import torrent.Torrent.RegisterPeerWithTorrent
+import com.typesafe.config.ConfigFactory
+import org.scalatest.{Matchers, FunSuiteLike}
 import scala.concurrent.duration._
+import torrent.TorrentActor.RegisterPeerWithTorrent
+import torrent.peer.OutboundPeer.OutboundPeerInit
 
-class PeerTest(_system: ActorSystem) extends TestSystem(_system) {
-  def this() = this(
-    ActorSystem(
-      "PeerTest",
-      ConfigFactory.parseString("""akka.loggers = ["akka.testkit.TestEventListener"]""")
-    )
-  )
+class PeerTest
+  extends TestKit(ActorSystem(
+    "PeerTest",
+    ConfigFactory.parseString( """akka.loggers = ["akka.testkit.TestEventListener"]""")))
+  with ImplicitSender
+  with FunSuiteLike
+  with Matchers {
 
   private trait Fixture {
     val torrent = TestProbe()
@@ -26,17 +27,17 @@ class PeerTest(_system: ActorSystem) extends TestSystem(_system) {
     val port = 6881
     val tag = TorrentStateTag(torrent.ref, infoHash, peerId)
 
-    def getPeer = testActorSystem.actorOf(
-      Props(
-        new OutboundPeer(tag, otherPeerId, host, port).asInstanceOf[Peer]
-      )
-    )
+    def getPeer: ActorRef = {
+      val outbound = system.actorOf(Props(classOf[OutboundPeer]))
+      outbound ! OutboundPeerInit(tag, otherPeerId, host, port)
+      outbound
+    }
 
-    def getTestPeerRef = TestActorRef[Peer](
-      Props(
-        new OutboundPeer(tag, otherPeerId, host, port)
-      )
-    )
+    def getTestPeerRef: TestActorRef[OutboundPeer] = {
+      val outbound = TestActorRef(new OutboundPeer)
+      outbound ! OutboundPeerInit(tag, otherPeerId, host, port)
+      outbound
+    }
   }
 
   test("registerPeerWithTorrent actually does what it claims") {

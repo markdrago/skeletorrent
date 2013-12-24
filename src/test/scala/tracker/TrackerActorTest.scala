@@ -1,37 +1,40 @@
 package tracker
 
 import akka.actor.{Props, ActorSystem}
-import spray.http._
-import spray.http.HttpResponse
-import concurrent.duration._
+import akka.testkit.{TestProbe, ImplicitSender, TestKit}
 import akka.util.ByteString
 import bencoding.messages.TrackerResponse
-import tracker.TrackerAnnouncer.{TrackerAnnounceResponseMsg, TrackerAnnounceFailure, TrackerAnnounceRequestMsg, TrackerRequest}
-import main.TestSystem
+import concurrent.duration._
+import org.scalatest.{Matchers, FunSuiteLike}
+import spray.http._
+import tracker.TrackerActor.{TrackerAnnounceResponseMsg, TrackerAnnounceFailure, TrackerAnnounceRequestMsg, TrackerRequest}
 
-class TrackerAnnouncerTest(_system: ActorSystem) extends TestSystem(_system) {
-  def this() = this(ActorSystem("TrackerAnnouncerTest"))
+class TrackerActorTest
+  extends TestKit(ActorSystem("TrackerActorTest"))
+  with ImplicitSender
+  with FunSuiteLike
+  with Matchers {
 
-  //replace the mock trackerAnnouncer in TestSystem with the real deal
-  override val trackerAnnouncer = _system.actorOf(Props(new TrackerAnnouncer))
+  val httpManagerProbe = TestProbe()
+  val trackerActor = system.actorOf(Props(classOf[TrackerActor], httpManagerProbe.ref))
 
   test("TrackerAnnouncer replies with TrackerAnnounceResponseMsg on success") {
-    trackerAnnouncer ! TrackerAnnounceRequestMsg(exampleTrackerRequest())
-    httpClientProbe.expectMsgType[HttpRequest](1000.millis)
-    httpClientProbe.reply(successfulHttpResponse)
+    trackerActor ! TrackerAnnounceRequestMsg(exampleTrackerRequest())
+    httpManagerProbe.expectMsgType[HttpRequest](1000.millis)
+    httpManagerProbe.reply(successfulHttpResponse)
     expectMsg(successfulTrackerAnnounceResponseMsg)
   }
 
   test("TrackerAnnouncer replies with TrackerAnnounceFailure after failed HTTP response") {
-    trackerAnnouncer ! TrackerAnnounceRequestMsg(exampleTrackerRequest())
-    httpClientProbe.expectMsgType[HttpRequest](1000.millis)
-    httpClientProbe.reply(failedHttpResponse)
+    trackerActor ! TrackerAnnounceRequestMsg(exampleTrackerRequest())
+    httpManagerProbe.expectMsgType[HttpRequest](1000.millis)
+    httpManagerProbe.reply(failedHttpResponse)
     expectMsgType[TrackerAnnounceFailure]
   }
 
   test("prepareRequestUrl generates expected Url in simple situation") {
-    val result = TrackerAnnouncer.prepareRequestUrl(exampleTrackerRequest())
-    result should be (
+    val result = TrackerActor.prepareRequestUrl(exampleTrackerRequest())
+    result should be(
       "http://www.legaltorrents.com:7070/announce?" +
         "info_hash=info+Hash%26Here&" +
         s"peer_id=peerIdHere&" +
@@ -43,10 +46,10 @@ class TrackerAnnouncerTest(_system: ActorSystem) extends TestSystem(_system) {
   }
 
   test("prepareRequestUrl generates expected Url if announce URL already has parameters") {
-    val result = TrackerAnnouncer.prepareRequestUrl(
+    val result = TrackerActor.prepareRequestUrl(
       exampleTrackerRequest("http://www.legaltorrents.com:7070/announce?key=1")
     )
-    result should be (
+    result should be(
       "http://www.legaltorrents.com:7070/announce?key=1&" +
         "info_hash=info+Hash%26Here&" +
         s"peer_id=peerIdHere&" +
@@ -58,11 +61,11 @@ class TrackerAnnouncerTest(_system: ActorSystem) extends TestSystem(_system) {
   }
 
   test("prepareRequestUrl generates expected Url when given an event type") {
-    val result = TrackerAnnouncer.prepareRequestUrl(exampleTrackerRequest(
+    val result = TrackerActor.prepareRequestUrl(exampleTrackerRequest(
       "http://www.legaltorrents.com:7070/announce",
       Some(AnnounceEventStarted())
     ))
-    result should be (
+    result should be(
       "http://www.legaltorrents.com:7070/announce?" +
         "info_hash=info+Hash%26Here&" +
         s"peer_id=peerIdHere&" +
@@ -73,9 +76,10 @@ class TrackerAnnouncerTest(_system: ActorSystem) extends TestSystem(_system) {
         "&event=started"
     )
   }
-  
-  def exampleTrackerRequest(baseUrl: String = "http://www.legaltorrents.com:7070/announce",
-                            eventType: Option[AnnounceEvent] = None) = {
+
+  def exampleTrackerRequest(
+    baseUrl: String = "http://www.legaltorrents.com:7070/announce",
+    eventType: Option[AnnounceEvent] = None) = {
     TrackerRequest(
       baseUrl,
       ByteString("info Hash&Here"),

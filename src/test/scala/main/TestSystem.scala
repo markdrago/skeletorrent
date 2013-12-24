@@ -1,3 +1,4 @@
+/*
 package main
 
 import tracker.{TrackerAnnouncerComponent, HttpClientComponent}
@@ -32,6 +33,7 @@ class TestSystem(_system: ActorSystem)
   val trackerAnnouncerProbe = TestProbe()
   override val trackerAnnouncer = trackerAnnouncerProbe.ref
 
-  override val torrentFactory = mock[TorrentFactory]
+  override val torrentFactory = mock[TorrentActorFactory]
   override val outboundPeerFactory = mock[OutboundPeerFactory]
 }
+*/

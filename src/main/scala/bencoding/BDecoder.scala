@@ -11,7 +11,7 @@ class BDecoder {
    */
   def decodeString(encoded: ByteString): BEncodedString = {
     checkStringFormat(encoded)
-    val digits = encoded.takeWhile(byteIsDigit(_))
+    val digits = encoded.takeWhile(byteIsDigit)
     val len = Integer.valueOf(new String(digits.toArray, "UTF-8"))
     require(encoded.length >= digits.length + len + 1, "bencoded string is shorter than expected")
     new BEncodedString(encoded.slice(digits.length + 1, digits.length + len + 1))
