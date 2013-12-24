@@ -3,7 +3,7 @@ package torrent
 import akka.actor.{Props, ActorLogging, ActorRef, Actor}
 import akka.io.Tcp.{Connected, Bind, Bound}
 import akka.util.{ByteString, Timeout}
-import bencoding.messages.{TrackerResponse, MetaInfo}
+import bencoding.messages.{TrackerPeerDetails, TrackerResponse, MetaInfo}
 import concurrent.ExecutionContext
 import concurrent.duration._
 import java.net.InetSocketAddress
@@ -11,7 +11,14 @@ import scala.util.Random
 import torrent.TorrentActor._
 import torrent.peer.OutboundPeer.OutboundPeerInit
 import torrent.peer.TorrentStateTag
-import tracker.TrackerActor.{TrackerRequest, TrackerAnnounceRequestMsg, TrackerAnnounceResponseMsg}
+import tracker.TrackerActor._
+import akka.io.Tcp.Connected
+import tracker.TrackerActor.TrackerInit
+import torrent.peer.OutboundPeer.OutboundPeerInit
+import torrent.TorrentActor.RegisterPeerWithTorrent
+import akka.io.Tcp.Bind
+import akka.io.Tcp.Bound
+import torrent.peer.TorrentStateTag
 
 class TorrentActor(
   val port: Int,
@@ -29,40 +36,29 @@ class TorrentActor(
   var downloaded = 0
   var left = 0
 
+  //bind to listening port, start up tracker actor
+  tcpManager ! Bind(self, new InetSocketAddress(port))
   val trackerActor = context.actorOf(trackerActorProps)
 
-  val peerId = generatePeerId
-
-  def generatePeerId: String = {
+  private[torrent] lazy val peerId: String = {
     val prefix = "-SK0001-"
     prefix + new String((new Random).alphanumeric.take(20 - prefix.length).toArray)
   }
 
-  def receive = uninitializedState
-
-  private def uninitializedState: Receive = {
-    case TorrentStartMsg() =>
-      context.become(awaitingBindingState)
-      //peerAccepter ! Bind(new InetSocketAddress(port), 100, new TorrentStateTag(self, metainfo.infoHash, peerId))
-      tcpManager ! Bind(self, new InetSocketAddress(port))
-  }
+  def receive = awaitingBindingState
 
   private def awaitingBindingState: Receive = {
     case Bound(_) =>
       context.become(steadyState)
-      trackerActor ! TrackerAnnounceRequestMsg(TrackerRequest(
+      trackerActor ! TrackerInit(
         metainfo.trackerUrl,
         metainfo.infoHash,
         peerId,
-        port,
-        uploaded,
-        downloaded,
-        left
-      ))
+        port)
   }
 
   private def steadyState: Receive = {
-    case TrackerAnnounceResponseMsg(resp) => handleTrackerResponse(resp)
+    case TrackerPeerSet(peerSet) => handleTrackerResponse(peerSet)
     case RegisterPeerWithTorrent(peer)    => registerPeer(peer)
     case c@Connected(remote, local)       => {
       //TODO: uniquify actor name
@@ -75,8 +71,8 @@ class TorrentActor(
     }
   }
 
-  private def handleTrackerResponse(resp: TrackerResponse) {
-    resp.peers.foreach((peer) => {
+  private def handleTrackerResponse(peerSet: Set[TrackerPeerDetails]) {
+    peerSet.foreach((peer) => {
       log.info(s"discovered peer: id: ${peer.peerId}, ip: ${peer.ip}, port: ${peer.port}")
       connectToPeer(peer.peerId, peer.ip, peer.port)
     })

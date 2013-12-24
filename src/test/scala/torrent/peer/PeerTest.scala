@@ -42,7 +42,7 @@ class PeerTest
 
   test("registerPeerWithTorrent actually does what it claims") {
     new Fixture {
-      within(100.millis) {
+      within(250.millis) {
         val peer = getTestPeerRef
         peer.underlyingActor.registerPeerWithTorrent(tag)
         torrent.expectMsg[RegisterPeerWithTorrent](

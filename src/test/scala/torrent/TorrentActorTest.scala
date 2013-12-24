@@ -4,14 +4,14 @@ import akka.actor.ActorSystem
 import akka.io.Tcp.Bound
 import akka.testkit.{TestKit, ImplicitSender, TestProbe, TestActorRef}
 import akka.util.ByteString
-import bencoding.messages.{TrackerPeerDetails, TrackerResponse, MetaInfo, MetaInfoSample}
+import bencoding.messages.{TrackerPeerDetails, MetaInfo, MetaInfoSample}
 import concurrent.duration._
 import java.net.InetSocketAddress
 import org.scalatest.{FunSuiteLike, Matchers}
 import peer.TorrentStateTag
 import torrent.TorrentActor.{RegisterPeerWithTorrent, TorrentStartMsg}
 import torrent.peer.OutboundPeer.OutboundPeerInit
-import tracker.TrackerActor.{TrackerAnnounceResponseMsg, TrackerRequest, TrackerAnnounceRequestMsg}
+import tracker.TrackerActor.{TrackerPeerSet, TrackerInit}
 import utils.ProbeForwarderProps._
 
 class TorrentActorTest
@@ -53,14 +53,12 @@ class TorrentActorTest
 
     //send bound message and check for resulting message to tracker announcer
     torrent ! Bound(new InetSocketAddress(6881))
-    trackerActorProbe.expectMsg[TrackerAnnounceRequestMsg](1000.millis,
-      TrackerAnnounceRequestMsg(TrackerRequest(
+    trackerActorProbe.expectMsg[TrackerInit](1000.millis,
+      TrackerInit(
         metaInfo.trackerUrl,
         metaInfo.infoHash,
         torrent.underlyingActor.peerId,
-        6881,
-        0, 0, 0
-      ))
+        6881)
     )
   }
 
@@ -71,8 +69,8 @@ class TorrentActorTest
     torrent ! Bound(null)
 
     //send tracker response message and check for interaction with outbound peer factory mock
-    val peers = TrackerPeerDetails(ByteString("peerid"), "1.2.3.4", 6881) :: Nil
-    torrent ! TrackerAnnounceResponseMsg(TrackerResponse(180, peers))
+    val peers = Set(TrackerPeerDetails(ByteString("peerid"), "1.2.3.4", 6881))
+    torrent ! TrackerPeerSet(peers)
 
     val expectedTag = TorrentStateTag(torrent, metaInfo.infoHash, torrent.underlyingActor.peerId)
     val initMessage = outboundPeerProbe.expectMsgClass(classOf[OutboundPeerInit])
