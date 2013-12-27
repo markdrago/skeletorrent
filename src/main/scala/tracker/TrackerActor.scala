@@ -1,6 +1,6 @@
 package tracker
 
-import akka.actor.{Cancellable, ActorRef, Actor}
+import akka.actor.{Props, Cancellable, ActorRef, Actor}
 import akka.pattern.{ask, pipe}
 import akka.util.{ByteString, Timeout}
 import bencoding.messages.TrackerPeerDetails
@@ -14,15 +14,17 @@ import spray.http._
 import tracker.TrackerActor._
 import utils.Utils
 
-class TrackerActor(httpIoManager: ActorRef) extends Actor {
+class TrackerActor(
+  httpIoManager: ActorRef,
+  baseUrl: String,
+  infoHash: ByteString,
+  peerId: String,
+  port: Int) extends Actor {
+
   implicit val ec = ExecutionContext.global
   implicit val timeout: Timeout = 5 seconds span
 
-  //set only once after TrackerInit message
-  var baseUrl = ""
-  var infoHash = ByteString.empty
-  var peerId = ""
-  var port = 0
+  val DEFAULT_ANNOUNCE_INTERVAL = 300
 
   //modified when parent (torrent) sends updated state message
   var uploaded = 0
@@ -36,27 +38,21 @@ class TrackerActor(httpIoManager: ActorRef) extends Actor {
   override def receive = pendingInitState
 
   def pendingInitState: Receive = {
-    case m: TrackerInit => handleTrackerInit(m)
+    case TrackerStart =>
+      //send initial announce message to tracker
+      announceToTracker(Some(AnnounceEventStarted()))
+
+      //set up timer to send regular tracker updates
+      updateTrackerInterval(DEFAULT_ANNOUNCE_INTERVAL)
+
+      //wait for results
+      context.become(steadyState)
   }
 
   def steadyState: Receive = {
     case TrackerTimer     => announceToTracker(None)
     case m: TrackerStatus => handleTrackerStatus(m)
     case m: TrackerEvent  => announceToTracker(Some(m.eventType))
-  }
-
-  def handleTrackerInit(msg: TrackerInit) {
-    //set initial state
-    baseUrl = msg.baseUrl
-    infoHash = msg.infoHash
-    peerId = msg.peerId
-    port = msg.port
-
-    //send initial announce message to tracker
-    announceToTracker(Some(AnnounceEventStarted()))
-
-    //wait for results
-    context.become(steadyState)
   }
 
   def handleTrackerStatus(msg: TrackerStatus) {
@@ -117,12 +113,21 @@ class TrackerActor(httpIoManager: ActorRef) extends Actor {
 }
 
 object TrackerActor {
-  case class TrackerInit(baseUrl: String, infoHash: ByteString, peerId: String, port: Int)
   case class TrackerStatus(uploaded: Int, downloaded: Int, left: Int)
   case class TrackerEvent(eventType: AnnounceEvent)
   case class TrackerFailure(msg: String)
+
+  case object TrackerStart
   case object TrackerTimer
 
   //TODO: move this message to Torrent (not Tracker) and change TrackerPeerDetails to AvailablePeerDetails
   case class TrackerPeerSet(peers: Set[TrackerPeerDetails])
+
+  type TrackerActorPropsFactory = (ActorRef, String, ByteString, String, Int) => Props
+  def props: TrackerActorPropsFactory = (
+    httpIoManager: ActorRef,
+    baseUrl: String,
+    infoHash: ByteString,
+    peerId: String,
+    port: Int) => Props(classOf[TrackerActor], httpIoManager, baseUrl, infoHash, peerId, port)
 }

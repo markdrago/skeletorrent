@@ -1,0 +1,5 @@
+package torrent
+
+class TorrentState {
+
+}

@@ -1,6 +1,6 @@
 package tracker
 
-import akka.actor.{Props, ActorSystem}
+import akka.actor.ActorSystem
 import akka.testkit.{TestActorRef, TestProbe, ImplicitSender, TestKit}
 import akka.util.ByteString
 import bencoding.messages.TrackerPeerDetails
@@ -20,18 +20,26 @@ class TrackerActorTest
 
   val httpManagerProbe = TestProbe()
 
+  val baseUrl = "http://www.legaltorrents.com:7070/announce"
+  val eventType: Option[AnnounceEvent] = None
+  val infoHash = ByteString("info Hash&Here")
+  val peerId = "peerIdHere"
+  val port = 6881
+
   private trait Fixture {
-    val trackerActor = TestActorRef(new TrackerActor(httpManagerProbe.ref))
+    def trackerActor(customBaseUrl: String) = TestActorRef(new TrackerActor(httpManagerProbe
+      .ref, customBaseUrl, infoHash, peerId, port))
   }
 
   private trait MediatorFixture {
     val fosterParentProbe = TestProbe()
-    val trackerActor = ParentChildMediator(fosterParentProbe.ref, Props(classOf[TrackerActor], httpManagerProbe.ref))
+    val trackerActor = ParentChildMediator(fosterParentProbe.ref, TrackerActor
+      .props(httpManagerProbe.ref, baseUrl, infoHash, peerId, port))
   }
 
   test("TrackerAnnouncer replies with TrackerAnnounceResponseMsg on success") {
     new MediatorFixture {
-      trackerActor ! exampleTrackerInit()
+      trackerActor ! TrackerStart
       httpManagerProbe.expectMsgType[HttpRequest](1 second)
       httpManagerProbe.reply(successfulHttpResponse)
       fosterParentProbe.expectMsg(successfulTrackerResponseMsg)
@@ -40,7 +48,7 @@ class TrackerActorTest
 
   test("TrackerAnnouncer replies with TrackerFailure after failed HTTP response") {
     new MediatorFixture {
-      trackerActor ! exampleTrackerInit()
+      trackerActor ! TrackerStart
       httpManagerProbe.expectMsgType[HttpRequest](1 second)
       httpManagerProbe.reply(failedHttpResponse)
       fosterParentProbe.expectMsgType[TrackerFailure]
@@ -49,8 +57,8 @@ class TrackerActorTest
 
   test("prepareRequestUrl generates expected Url in simple situation") {
     new Fixture {
-      trackerActor ! exampleTrackerInit()
-      val result = trackerActor.underlyingActor.prepareRequestUrl(None)
+      val actor = trackerActor(baseUrl)
+      val result = actor.underlyingActor.prepareRequestUrl(None)
       result should be(
         "http://www.legaltorrents.com:7070/announce?" +
           "info_hash=info+Hash%26Here&" +
@@ -65,8 +73,8 @@ class TrackerActorTest
 
   test("prepareRequestUrl generates expected Url if announce URL already has parameters") {
     new Fixture {
-      trackerActor ! exampleTrackerInit("http://www.legaltorrents.com:7070/announce?key=1")
-      val result = trackerActor.underlyingActor.prepareRequestUrl(None)
+      val actor = trackerActor("http://www.legaltorrents.com:7070/announce?key=1")
+      val result = actor.underlyingActor.prepareRequestUrl(None)
       result should be(
         "http://www.legaltorrents.com:7070/announce?key=1&" +
           "info_hash=info+Hash%26Here&" +
@@ -81,8 +89,8 @@ class TrackerActorTest
 
   test("prepareRequestUrl generates expected Url when given an event type") {
     new Fixture {
-      trackerActor ! exampleTrackerInit("http://www.legaltorrents.com:7070/announce")
-      val result = trackerActor.underlyingActor.prepareRequestUrl(Some(AnnounceEventStarted()))
+      val actor = trackerActor("http://www.legaltorrents.com:7070/announce")
+      val result = actor.underlyingActor.prepareRequestUrl(Some(AnnounceEventStarted()))
       result should be(
         "http://www.legaltorrents.com:7070/announce?" +
           "info_hash=info+Hash%26Here&" +
@@ -94,18 +102,6 @@ class TrackerActorTest
           "&event=started"
       )
     }
-  }
-
-  def exampleTrackerInit(
-    baseUrl: String = "http://www.legaltorrents.com:7070/announce",
-    eventType: Option[AnnounceEvent] = None) = {
-
-    TrackerInit(
-      baseUrl,
-      ByteString("info Hash&Here"),
-      "peerIdHere",
-      6881
-    )
   }
 
   def successfulHttpResponseBody = "d8:intervali300e5:peerslee"

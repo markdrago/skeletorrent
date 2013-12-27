@@ -14,8 +14,7 @@ object TorrentActorFactory {
     port: Int,
     metainfoString: ByteString): ActorRef = {
 
-    val trackerActorProps = Props(classOf[TrackerActor], IO(Http)(system))
-    val outboundPeerProps = Props(classOf[OutboundPeer])
+    val httpManager = IO(Http)(system)
     val tcpManager = IO(Tcp)(system)
 
     system.actorOf(Props(
@@ -23,8 +22,9 @@ object TorrentActorFactory {
       port,
       MetaInfo.apply(metainfoString),
       tcpManager,
-      trackerActorProps,
-      outboundPeerProps)
+      httpManager,
+      TrackerActor.props _,
+      OutboundPeer.props _)
     )
   }
 }
