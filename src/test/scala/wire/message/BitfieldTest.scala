@@ -1,11 +1,10 @@
 package wire.message
 
-import org.scalatest.matchers.ShouldMatchers
-import org.scalatest.FunSuite
 import akka.util.{ByteStringBuilder, ByteString}
 import java.nio.ByteOrder
+import org.scalatest.{Matchers, FunSuite}
 
-class BitfieldTest extends FunSuite with ShouldMatchers {
+class BitfieldTest extends FunSuite with Matchers {
   implicit val bo = ByteOrder.BIG_ENDIAN
 
   //bitfield message which indicates the 0th piece is available

@@ -3,7 +3,6 @@ package tracker
 import akka.actor.{Props, Cancellable, ActorRef, Actor}
 import akka.pattern.{ask, pipe}
 import akka.util.{ByteString, Timeout}
-import bencoding.messages.TrackerPeerDetails
 import bencoding.messages.TrackerResponse
 import concurrent.ExecutionContext
 import concurrent.duration._
@@ -11,6 +10,7 @@ import java.net.URL
 import scala.language.postfixOps
 import spray.http.HttpMethods._
 import spray.http._
+import torrent.TorrentActor.AvailablePeerSet
 import tracker.TrackerActor._
 import utils.Utils
 
@@ -69,7 +69,7 @@ class TrackerActor(
       if (response.status.isSuccess) {
         val parsedResponse = TrackerResponse(ByteString(response.entity.asString))
         updateTrackerInterval(parsedResponse.interval)
-        TrackerPeerSet(parsedResponse.peers.toSet)
+        AvailablePeerSet(parsedResponse.peers)
       }
       else
         TrackerFailure(s"Non-successful response from tracker GET Request: $url (${response.message})")
@@ -120,10 +120,8 @@ object TrackerActor {
   case object TrackerStart
   case object TrackerTimer
 
-  //TODO: move this message to Torrent (not Tracker) and change TrackerPeerDetails to AvailablePeerDetails
-  case class TrackerPeerSet(peers: Set[TrackerPeerDetails])
-
   type TrackerActorPropsFactory = (ActorRef, String, ByteString, String, Int) => Props
+
   def props: TrackerActorPropsFactory = (
     httpIoManager: ActorRef,
     baseUrl: String,

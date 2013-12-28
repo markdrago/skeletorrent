@@ -1,11 +1,10 @@
 package wire.message
 
-import java.nio.ByteOrder
 import akka.util.{ByteStringBuilder, ByteString}
-import org.scalatest.matchers.ShouldMatchers
-import org.scalatest.FunSuite
+import java.nio.ByteOrder
+import org.scalatest.{Matchers, FunSuite}
 
-class KeepAliveTest extends FunSuite with ShouldMatchers {
+class KeepAliveTest extends FunSuite with Matchers {
   implicit val bo = ByteOrder.BIG_ENDIAN
 
   test("KeepAlive parser throws IAE with KeepAlive message that is too short") {

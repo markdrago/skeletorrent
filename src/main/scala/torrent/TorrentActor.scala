@@ -1,17 +1,15 @@
 package torrent
 
 import akka.actor.{ActorLogging, ActorRef, Actor}
-import akka.io.Tcp.Bind
-import akka.io.Tcp.Bound
-import akka.io.Tcp.Connected
+import akka.io.Tcp.{Connect, Bind, Bound, Connected}
 import akka.util.{ByteString, Timeout}
-import bencoding.messages.{TrackerPeerDetails, MetaInfo}
+import bencoding.messages.{AvailablePeerDetails, MetaInfo}
 import concurrent.ExecutionContext
 import concurrent.duration._
-import java.net.InetSocketAddress
+import java.net.{InetAddress, InetSocketAddress}
 import scala.util.Random
-import torrent.TorrentActor.RegisterPeerWithTorrent
-import torrent.peer.OutboundPeer
+import torrent.TorrentActor.AvailablePeerSet
+import torrent.peer.{PeerTypeInbound, PeerTypeOutbound, Peer}
 import tracker.TrackerActor
 import tracker.TrackerActor._
 
@@ -21,26 +19,28 @@ class TorrentActor(
   tcpManager: ActorRef,
   httpManager: ActorRef,
   trackerActorPropsFactory: TrackerActor.TrackerActorPropsFactory,
-  outboundPeerPropsFactory: OutboundPeer.OutboundPeerPropsFactory)
+  peerPropsFactory: Peer.PeerPropsFactory)
   extends Actor with ActorLogging {
 
   implicit val ec = ExecutionContext.global
   implicit val timeout: Timeout = 5 seconds span
 
-  var peers: List[ActorRef] = Nil
+  var pendingConnections = Map.empty[InetSocketAddress, ByteString]
+  var peers = Set.empty[ActorRef]
+
+  //TODO: move to state object
   var uploaded = 0
   var downloaded = 0
   var left = 0
 
-  //bind to listening port, start up tracker actor
-  tcpManager ! Bind(self, new InetSocketAddress(port))
-  val trackerActor = context.actorOf(
-    trackerActorPropsFactory(httpManager, metainfo.trackerUrl, metainfo.infoHash, peerId, port))
+  val peerId = TorrentActor.generatePeerId
 
-  private[torrent] lazy val peerId: String = {
-    val prefix = "-SK0001-"
-    prefix + new String((new Random).alphanumeric.take(20 - prefix.length).toArray)
-  }
+  //bind to listening port
+  tcpManager ! Bind(self, new InetSocketAddress(port))
+
+  //start up tracker actor
+  val trackerProps = trackerActorPropsFactory(httpManager, metainfo.trackerUrl, metainfo.infoHash, peerId, port)
+  val trackerActor = context.actorOf(trackerProps)
 
   def receive = awaitingBindingState
 
@@ -51,44 +51,47 @@ class TorrentActor(
   }
 
   private def steadyState: Receive = {
-    case TrackerPeerSet(peerSet)       => handleTrackerResponse(peerSet)
-    case RegisterPeerWithTorrent(peer) => registerPeer(peer)
-    case c@Connected(remote, local)    => {
-      //TODO: uniquify actor name
-      //TODO: for that matter, support inbound at all
-      /*
-      val handler = context.system.actorOf(Props[InboundPeer], "peer:inbound")
-      val connection = sender
-      connection ! Register(handler)
-      */
-    }
+    case AvailablePeerSet(availablePeers) => handleTrackerResponse(availablePeers)
+    case c@Connected(remote, _)           => handleSuccessfulConnection(remote)
   }
 
-  private def handleTrackerResponse(peerSet: Set[TrackerPeerDetails]) {
-    peerSet.foreach((peer) => {
-      log.info(s"discovered peer: id: ${peer.peerId}, ip: ${peer.ip}, port: ${peer.port}")
-      connectToPeer(peer.peerId, peer.ip, peer.port)
+  private def handleTrackerResponse(availablePeers: Set[AvailablePeerDetails]) {
+    availablePeers.foreach((peer) => {
+      log.info(s"discovered peer: id: ${peer.peerId}, ip: ${peer.host}, port: ${peer.port}")
+      requestConnectionToPeer(peer.peerId, peer.host, peer.port)
     })
   }
 
-  private def connectToPeer(otherPeerId: ByteString, host: String, port: Int) {
-    //val tag = TorrentStateTag(self, metainfo.infoHash, peerId)
-
-    val outboundPeer = context.actorOf(outboundPeerPropsFactory(tcpManager, otherPeerId, host, port, metainfo.infoHash))
-    //outboundPeer ! OutboundPeerInit(tag, otherPeerId, host, port)
-    //outboundPeerFactory.create(context, tag, otherPeerId, host, port)
+  private def requestConnectionToPeer(remotePeerId: ByteString, host: String, port: Int) {
+    log.info(s"Requesting connection to peer: $remotePeerId @ $host:$port")
+    val remoteAddress = new InetSocketAddress(InetAddress.getByName(host), port)
+    tcpManager ! Connect(remoteAddress)
+    pendingConnections += (remoteAddress -> remotePeerId)
   }
 
-  private def registerPeer(peer: ActorRef) {
-    peers = peer :: peers
-    log.info("peer registered with torrent")
+  private def handleSuccessfulConnection(remote: InetSocketAddress) {
+    log.info(s"Successful connection with ${remote.getAddress}:${remote.getPort}")
+    val connection = sender
+
+    //if remote address was in pending connections, then this is an outbound peer
+    val (peerType, remotePeerId) = pendingConnections.get(remote) match {
+      case Some(otherPeerId) =>
+        pendingConnections -= remote
+        (PeerTypeOutbound, Some(otherPeerId))
+      case None              => (PeerTypeInbound, None)
+    }
+
+    val peerProps = peerPropsFactory(connection, peerType, metainfo.infoHash, ByteString(peerId), remotePeerId)
+    peers += context.actorOf(peerProps)
   }
 }
 
 object TorrentActor {
+  case class AvailablePeerSet(peers: Set[AvailablePeerDetails])
 
-  case class TorrentStartMsg()
-
-  case class RegisterPeerWithTorrent(peer: ActorRef)
+  def generatePeerId = {
+    val prefix = "-SK0001-"
+    prefix + new String((new Random).alphanumeric.take(20 - prefix.length).toArray)
+  }
 
 }

@@ -1,11 +1,10 @@
 package wire.message
 
-import java.nio.ByteOrder
 import akka.util.{ByteStringBuilder, ByteString}
-import org.scalatest.matchers.ShouldMatchers
-import org.scalatest.FunSuite
+import java.nio.ByteOrder
+import org.scalatest.{Matchers, FunSuite}
 
-trait SimpleMessageTest extends FunSuite with ShouldMatchers {
+trait SimpleMessageTest extends FunSuite with Matchers {
   def messageName: String
   def messageType: Byte
   def messageParser(str: ByteString): Message

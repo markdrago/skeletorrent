@@ -1,10 +1,9 @@
 package wire.message
 
-import org.scalatest.matchers.ShouldMatchers
-import org.scalatest.FunSuite
 import akka.util.{ByteStringBuilder, ByteString}
+import org.scalatest.{Matchers, FunSuite}
 
-class HandshakeTest extends FunSuite with ShouldMatchers {
+class HandshakeTest extends FunSuite with Matchers {
   val protoId = "BitTorrent protocol"
   val infohash = Array.fill(20)(0xAB.toByte)
   val peerid = Array.fill(20)(0x12.toByte)

@@ -1,13 +1,12 @@
 package bencoding.messages
 
-import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
-import javax.xml.bind.DatatypeConverter
 import akka.util.ByteString
-import bencoding.{BEncoder, BDecoder}
 import bencoding.items.BEncodedList
+import bencoding.{BEncoder, BDecoder}
+import javax.xml.bind.DatatypeConverter
+import org.scalatest.{Matchers, FunSuite}
 
-class MetaInfoTest extends FunSuite with ShouldMatchers {
+class MetaInfoTest extends FunSuite with Matchers {
   test("MetaInfo contstructor will not allow creation of invalid MetaInfo file") {
     val dict = (new BDecoder).decodeMap(ByteString("d1:a1:be"))
     evaluating { new MetaInfo(dict) } should produce [IllegalArgumentException]
@@ -52,7 +51,7 @@ class MetaInfoTest extends FunSuite with ShouldMatchers {
   }
 
   test("isMultifile returns true for multiple file metainfo") {
-    MetaInfo(MetaInfoSample.get_metainfo_file_contents_multifile) should be a ('multifile)
+    MetaInfo(MetaInfoSample.get_metainfo_file_contents_multifile) should be a 'multifile
   }
 
   test("files returns None for single file metainfo") {

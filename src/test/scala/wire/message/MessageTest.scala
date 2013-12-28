@@ -1,10 +1,9 @@
 package wire.message
 
-import org.scalatest.matchers.ShouldMatchers
-import org.scalatest.FunSuite
 import akka.util.{ByteStringBuilder, ByteString}
+import org.scalatest.{Matchers, FunSuite}
 
-class MessageTest extends FunSuite with ShouldMatchers {
+class MessageTest extends FunSuite with Matchers {
   object SimpleParser extends MessageParser {
     def apply(str: ByteString): Message = throw new NotImplementedError()
   }

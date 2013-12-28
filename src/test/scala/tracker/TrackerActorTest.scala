@@ -3,7 +3,7 @@ package tracker
 import akka.actor.ActorSystem
 import akka.testkit.{TestActorRef, TestProbe, ImplicitSender, TestKit}
 import akka.util.ByteString
-import bencoding.messages.TrackerPeerDetails
+import bencoding.messages.AvailablePeerDetails
 import concurrent.duration._
 import org.scalatest.{Matchers, FunSuiteLike}
 import scala.Some
@@ -11,6 +11,7 @@ import scala.language.postfixOps
 import spray.http._
 import tracker.TrackerActor._
 import utils.ParentChildMediator
+import torrent.TorrentActor.AvailablePeerSet
 
 class TrackerActorTest
   extends TestKit(ActorSystem("TrackerActorTest"))
@@ -115,7 +116,7 @@ class TrackerActorTest
     )
   }
 
-  def successfulTrackerResponseMsg = TrackerPeerSet(Set.empty[TrackerPeerDetails])
+  def successfulTrackerResponseMsg = AvailablePeerSet(Set.empty[AvailablePeerDetails])
 
   def failedHttpResponse = {
     HttpResponse(

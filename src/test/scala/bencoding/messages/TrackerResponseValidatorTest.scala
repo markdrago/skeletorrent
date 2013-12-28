@@ -1,10 +1,9 @@
 package bencoding.messages
 
-import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
 import bencoding.{BDecoder, BEncoder}
+import org.scalatest.{Matchers, FunSuite}
 
-class TrackerResponseValidatorTest extends FunSuite with ShouldMatchers {
+class TrackerResponseValidatorTest extends FunSuite with Matchers {
   val bencoder = new BEncoder
   val bdecoder = new BDecoder
 

@@ -4,15 +4,15 @@ import akka.actor.{ActorRef, ActorSystem}
 import akka.io.Tcp.Bound
 import akka.testkit.{TestKit, ImplicitSender, TestProbe, TestActorRef}
 import akka.util.ByteString
-import bencoding.messages.{TrackerPeerDetails, MetaInfo, MetaInfoSample}
+import bencoding.messages.{AvailablePeerDetails, MetaInfo, MetaInfoSample}
 import concurrent.duration._
 import java.net.InetSocketAddress
 import org.scalatest.{FunSuiteLike, Matchers}
 import scala.language.postfixOps
-import torrent.TorrentActor.RegisterPeerWithTorrent
-import torrent.peer.{OutboundPeer, TorrentStateTag}
+import torrent.TorrentActor.AvailablePeerSet
+import torrent.peer.{PeerType, Peer}
 import tracker.TrackerActor
-import tracker.TrackerActor.{TrackerPeerSet, TrackerStart}
+import tracker.TrackerActor.TrackerStart
 import utils.ProbeForwarderProps._
 
 class TorrentActorTest
@@ -27,16 +27,18 @@ class TorrentActorTest
   val httpManagerProbe = TestProbe()
 
   //TODO: figure out how to support multiple outbound peers being created by torrent actor
-  val outboundPeerProbe = TestProbe()
-  def outboundPeerTestProbeFactory: OutboundPeer.OutboundPeerPropsFactory = (
+  val peerProbe = TestProbe()
+
+  def peerTestProbeFactory: Peer.PeerPropsFactory = (
     _: ActorRef,
+    _: PeerType,
     _: ByteString,
-    _: String,
-    _: Int,
-    _: ByteString) =>
-    outboundPeerProbe.props
+    _: ByteString,
+    _: Option[ByteString]) =>
+    peerProbe.props
 
   val trackerActorProbe = TestProbe()
+
   def trackerActorTestProbeFactory: TrackerActor.TrackerActorPropsFactory = (
     _: ActorRef,
     _: String,
@@ -52,7 +54,7 @@ class TorrentActorTest
       tcpManagerProbe.ref,
       httpManagerProbe.ref,
       trackerActorTestProbeFactory,
-      outboundPeerTestProbeFactory
+      peerTestProbeFactory
     )
   )
 
@@ -81,8 +83,8 @@ class TorrentActorTest
     torrent ! Bound(null)
 
     //send tracker response message and check for interaction with outbound peer factory mock
-    val peers = Set(TrackerPeerDetails(ByteString("peerid"), "1.2.3.4", 6881))
-    torrent ! TrackerPeerSet(peers)
+    val peers = Set(AvailablePeerDetails(ByteString("peerid"), "1.2.3.4", 6881))
+    torrent ! AvailablePeerSet(peers)
 
     //TODO: should probably assert something
     //val expectedTag = TorrentStateTag(torrent, metaInfo.infoHash, torrent.underlyingActor.peerId)
@@ -94,6 +96,10 @@ class TorrentActorTest
         */
   }
 
+  //TODO: test that torrent maintains pendingConnections properly (adds & removes)
+
+  //TODO: test that torrent maintains peers set properly
+  /*
   test("torrent remembers peers which register with it") {
     //get torrent and put it in steady state
     val torrent = get_torrent
@@ -109,4 +115,5 @@ class TorrentActorTest
     torrent.underlyingActor.peers should contain(peer.ref)
     torrent.underlyingActor.peers should have length 1
   }
+  */
 }

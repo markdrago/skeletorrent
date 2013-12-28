@@ -1,10 +1,9 @@
 package bencoding.messages
 
-import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
 import bencoding.{BEncoder, BDecoder}
+import org.scalatest.{Matchers, FunSuite}
 
-class MetaInfoValidatorTest extends FunSuite with ShouldMatchers {
+class MetaInfoValidatorTest extends FunSuite with Matchers {
 
   //both single & multifile
   test("checkMetaInfoValidity throws when announce element is not present") {

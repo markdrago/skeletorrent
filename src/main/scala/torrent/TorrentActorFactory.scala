@@ -5,7 +5,7 @@ import akka.io.{Tcp, IO}
 import akka.util.ByteString
 import bencoding.messages.MetaInfo
 import spray.can.Http
-import torrent.peer.OutboundPeer
+import torrent.peer.Peer
 import tracker.TrackerActor
 
 object TorrentActorFactory {
@@ -24,7 +24,7 @@ object TorrentActorFactory {
       tcpManager,
       httpManager,
       TrackerActor.props _,
-      OutboundPeer.props _)
+      Peer.props _)
     )
   }
 }

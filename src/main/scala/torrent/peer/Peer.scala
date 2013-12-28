@@ -4,29 +4,32 @@ import akka.actor._
 import akka.event.Logging
 import akka.io.Tcp._
 import akka.util.ByteString
-import torrent.TorrentActor.RegisterPeerWithTorrent
 import utils.Utils
+import wire.message.Handshake
 
-trait Peer extends Actor with ActorLogging {
-  def otherPeerId: ByteString
+class Peer(
+  connection: ActorRef,
+  peerType: PeerType,
+  infoHash: ByteString,
+  peerId: ByteString,
+  var remotePeerId: Option[ByteString]) extends Actor with ActorLogging {
 
   override val log = Logging(context.system, this)
 
-  def steadyState(connection: ActorRef): Receive = {
-    case Received(buffer)        => handleReceive(buffer)
+  registerAsConnectionHandler()
+  if (peerType == PeerTypeOutbound) sendInitialHandshake()
+
+  def receive: Receive = {
+    case Received(buffer) => handleReceive(buffer)
     case CommandFailed(w: Write) => log.error("torrent peer got command failed(write)")
-    case _: ConnectionClosed     => log.error("torrent peer got message to close")
-    case _                       => log.error("torrent peer got unknown message")
+    case _: ConnectionClosed => log.error("torrent peer got message to close")
+    case _ => log.error("torrent peer got unknown message")
   }
 
   private[this] def handleReceive(buffer: ByteString) {
     println("torrent peer recieved data")
-    println("from: " + otherPeerId.decodeString("UTF-8"))
+    println("from: " + remotePeerId.get.decodeString("UTF-8"))
     println("data: " + legibleData(buffer))
-  }
-
-  protected[peer] def registerPeerWithTorrent(tag: TorrentStateTag) {
-    tag.torrent ! RegisterPeerWithTorrent(self)
   }
 
   protected def legibleData(bs: ByteString): String = {
@@ -40,14 +43,27 @@ trait Peer extends Actor with ActorLogging {
     })
       .result()
   }
+
+  def registerAsConnectionHandler() {
+    connection ! Register(self)
+  }
+
+  def sendInitialHandshake() {
+    //TODO: handle lack of an otherPeerId
+    val handshake = new Handshake(infoHash, remotePeerId.get)
+    //TODO: probably want to do some acking
+    connection ! Write(handshake.serialize, NoAck)
+  }
 }
 
-/*
-class InboundPeer(val _conn: Connection) extends Peer {
-  //TODO: inject a factory which creates these connection actors and then unit test that creation
-  val connection = context.system.actorOf(Props(new DefaultIOConnectionActor(_conn, EmptyPipelineStage)))
+object Peer {
+  type PeerPropsFactory = (ActorRef, PeerType, ByteString, ByteString, Option[ByteString]) => Props
 
-  //TODO: parse handshake from inbound, get a hold of their peer id, verify infohash, etc.
-  val otherPeerId = ByteString("originally inbound")
+  def props: PeerPropsFactory = (
+    connection: ActorRef,
+    peerType: PeerType,
+    infoHash: ByteString,
+    peerId: ByteString,
+    remotePeerId: Option[ByteString]) =>
+    Props(classOf[Peer], connection, peerType, infoHash, peerId, remotePeerId)
 }
-*/

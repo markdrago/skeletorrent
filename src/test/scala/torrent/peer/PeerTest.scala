@@ -1,12 +1,10 @@
 package torrent.peer
 
-import akka.actor.{ActorRef, Props, ActorSystem}
-import akka.testkit.{ImplicitSender, TestKit, TestActorRef, TestProbe}
+import akka.actor.ActorSystem
+import akka.testkit.{ImplicitSender, TestKit, TestProbe}
 import akka.util.ByteString
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{Matchers, FunSuiteLike}
-import scala.concurrent.duration._
-import torrent.TorrentActor.RegisterPeerWithTorrent
 
 //TODO: this suite clearly needs some attention
 
@@ -37,8 +35,10 @@ class PeerTest
     }
     */
 
+    /*
     def getTestPeerRef: TestActorRef[OutboundPeer] =
       TestActorRef(new OutboundPeer(tcpManagerProbe.ref, otherPeerId, host, port, infoHash))
+      */
   }
 
   /*

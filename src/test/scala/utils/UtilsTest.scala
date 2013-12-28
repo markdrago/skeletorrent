@@ -1,10 +1,9 @@
 package utils
 
-import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
 import akka.util.ByteString
+import org.scalatest.{Matchers, FunSuite}
 
-class UtilsTest extends FunSuite with ShouldMatchers {
+class UtilsTest extends FunSuite with Matchers {
   test("urlEncode can encode a ByteString properly") {
     val input = ByteString("hello there world@.")
     val expected = "hello+there+world%40."

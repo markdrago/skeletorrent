@@ -1,11 +1,11 @@
 package bencoding.messages
 
-import bencoding.BDecoder
 import akka.util.ByteString
+import bencoding.BDecoder
 import bencoding.items.{BEncodedString, BEncodedMap, BEncodedList, BEncodedInt}
 
-case class TrackerPeerDetails(peerId: ByteString, ip: String, port: Int)
-case class TrackerResponse(interval: Int, peers: List[TrackerPeerDetails])
+case class AvailablePeerDetails(peerId: ByteString, host: String, port: Int)
+case class TrackerResponse(interval: Int, peers: Set[AvailablePeerDetails])
 
 //TODO: deduplicate some stuff b/w this and the similar MetaInfo object
 object TrackerResponse {
@@ -15,8 +15,8 @@ object TrackerResponse {
     val bencodedItem = bdecoder.decodeItem(bytes)
 
     bencodedItem match {
-      case m:BEncodedMap => TrackerResponse(m)
-      case _ => throw new IllegalArgumentException("TrackerResponse data must contain a top-level Map")
+      case m: BEncodedMap => TrackerResponse(m)
+      case _              => throw new IllegalArgumentException("TrackerResponse data must contain a top-level Map")
     }
   }
 
@@ -27,14 +27,13 @@ object TrackerResponse {
 
     def peers = {
       dict.get("peers").get.asInstanceOf[BEncodedList].collect({
-        case map:BEncodedMap => {
-          TrackerPeerDetails(
+        case map: BEncodedMap =>
+          AvailablePeerDetails(
             map.get("peer id").get.asInstanceOf[BEncodedString].value,
             map.get("ip").get.toString,
             map.get("port").get.toInt
           )
-        }
-      }).toList
+      }).toSet
     }
 
     TrackerResponse(interval, peers)
