@@ -1,7 +1,7 @@
 package bencoding.messages
 
 import akka.util.ByteString
-import javax.xml.bind.DatatypeConverter
+import java.util.Base64
 
 object TrackerResponseSample {
   def valid_response: Map[String, Any] = {
@@ -45,6 +45,6 @@ object TrackerResponseSample {
         "MWhka2ZhbzU4N3lxNDpwb3J0aTUxNDE1ZWVkMjppcDEyOjcxLjEyMi4xMS42MTc6cGVlciBpZDIw" +
         "Oi1ERTEzNTAtWH4pVGgoX084X2l0NDpwb3J0aTUxNDEzZWVkMjppcDEzOjkxLjIzNy4xOTcuMjI3" +
         "OnBlZXIgaWQyMDotVFIyNDIwLXUyaGRucHNydXdkYzQ6cG9ydGk1MTQxM2VlZWU="
-    ByteString(DatatypeConverter.parseBase64Binary(encoded))
+    ByteString(Base64.getDecoder().decode(encoded))
   }
 }

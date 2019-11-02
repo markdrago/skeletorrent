@@ -1,9 +1,11 @@
 package bencoding.messages
 
 import akka.util.ByteString
-import javax.xml.bind.DatatypeConverter
+import java.util.Base64
 
 object MetaInfoSample {
+  val base64Decoder = Base64.getDecoder()
+
   def get_metainfo_map_for_single_file: Map[String, Any] = {
     Map(
       "announce" -> "http://www.legaltorrents.com:7070/announce",
@@ -48,7 +50,7 @@ object MetaInfoSample {
       "MUlEH0osleKnyMGAS73zefOd3E5DVssVKnpLa8XMHJB5q9Hk98QiXmhc/GNWL4Gu1pEaD5LIMCbU" +
       "2Gc8oiM0J8BrIMLO0Ca3uEkys8EmVdvvSeAFc3OsidBWJ1jzkaX33qtSst1ZrxLjRBuLU5P/jXbe" +
       "a8GRD4RlZQ=="
-    ByteString(DatatypeConverter.parseBase64Binary(encoded))
+    ByteString(base64Decoder.decode(encoded))
   }
 
   def get_metainfo_file_contents_multifile: ByteString = {
@@ -68,7 +70,7 @@ object MetaInfoSample {
       "RB9KLJXip8jBgEu983nzndxOQ1bLFSp6S2vFzByQeavR5PfEIl5oXPxjVi+BrtaRGg+SyDAm1Nhn" +
       "PKIjNCfAayDCztAmt7hJMrPBJlXb70ngBXNzrInQVidY85Gl996rUrLdWa8S40Qbi1OT/4123mvB" +
       "kQ+EZWU="
-    ByteString(DatatypeConverter.parseBase64Binary(encoded))
+    ByteString(base64Decoder.decode(encoded))
   }
 
   def get_pieces_sha1sums: ByteString = get_individual_piece_sha1sums.reduceLeft(_++_)
@@ -85,6 +87,6 @@ object MetaInfoSample {
       "2+9J4AVzc6yJ0FYnWPORpffeq1I=",
       "st1ZrxLjRBuLU5P/jXbea8GRD4Q="
     )
-    encoded.map(DatatypeConverter.parseBase64Binary(_)).map(ByteString(_))
+    encoded.map(base64Decoder.decode(_)).map(ByteString(_))
   }
 }

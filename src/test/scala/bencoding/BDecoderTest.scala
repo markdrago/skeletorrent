@@ -2,7 +2,7 @@ package bencoding
 
 import items.{BEncodedMap, BEncodedInt, BEncodedString}
 import org.scalatest.{BeforeAndAfter, FunSuite}
-import javax.xml.bind.DatatypeConverter
+import java.util.Base64
 import akka.util.ByteString
 
 class BDecoderTest extends FunSuite with BeforeAndAfter {
@@ -185,6 +185,6 @@ class BDecoderTest extends FunSuite with BeforeAndAfter {
         "MUlEH0osleKnyMGAS73zefOd3E5DVssVKnpLa8XMHJB5q9Hk98QiXmhc/GNWL4Gu1pEaD5LIMCbU" +
         "2Gc8oiM0J8BrIMLO0Ca3uEkys8EmVdvvSeAFc3OsidBWJ1jzkaX33qtSst1ZrxLjRBuLU5P/jXbe" +
         "a8GRD4RlZQ=="
-    ByteString(DatatypeConverter.parseBase64Binary(encoded))
+    ByteString(Base64.getDecoder().decode(encoded))
   }
 }

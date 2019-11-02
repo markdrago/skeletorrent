@@ -3,7 +3,7 @@ package bencoding.messages
 import akka.util.ByteString
 import bencoding.items.BEncodedList
 import bencoding.{BEncoder, BDecoder}
-import javax.xml.bind.DatatypeConverter
+import java.util.Base64
 import org.scalatest.{Matchers, FunSuite}
 
 class MetaInfoTest extends FunSuite with Matchers {
@@ -74,7 +74,7 @@ class MetaInfoTest extends FunSuite with Matchers {
   }
 
   test("infoHash can be calculated") {
-    val expected = ByteString(DatatypeConverter.parseBase64Binary("ymrEu9lx05ApNdvPwtPqJbQopUc="))
+    val expected = ByteString(Base64.getDecoder().decode("ymrEu9lx05ApNdvPwtPqJbQopUc="))
     MetaInfo(MetaInfoSample.get_metainfo_file_contents).infoHash should be (expected)
   }
 }

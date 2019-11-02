@@ -6,11 +6,7 @@ scalaVersion := "2.10.3"
 
 scalacOptions ++= Seq("-feature", "-deprecation", "-unchecked")
 
-resolvers += "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/"
-
-//resolvers += "Spray Repository" at "http://nightlies.spray.io"
-
-//seq(ScctPlugin.instrumentSettings : _*)
+resolvers += "Typesafe Repository" at "https://repo.typesafe.com/typesafe/releases/"
 
 libraryDependencies ++= Seq(
     "org.scalatest" %% "scalatest" % "2.0" % "test",
