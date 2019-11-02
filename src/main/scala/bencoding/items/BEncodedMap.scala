@@ -1,8 +1,9 @@
 package bencoding.items
 
 import akka.util.ByteString
+import scala.collection.immutable.ListMap
 
-case class BEncodedMap(value: Map[String, BEncodedItem]) extends BEncodedItem with Map[String, BEncodedItem] {
+case class BEncodedMap(value: ListMap[String, BEncodedItem]) extends BEncodedItem with Map[String, BEncodedItem] {
 
   override def encodedLength: Int = {
     (2 /: value) ((acc, kv) => acc + BEncodedString.fromString(kv._1).encodedLength + kv._2.encodedLength)

@@ -1,6 +1,7 @@
 package bencoding.items
 
 import scala.language.reflectiveCalls
+import scala.collection.immutable.ListMap
 import org.scalatest.{FunSuite, Matchers}
 import akka.util.ByteString
 
@@ -18,9 +19,9 @@ class BEncodedItemTest extends FunSuite with Matchers {
       val list_a = new BEncodedList(List(int_a, str_a))
       val list_b = new BEncodedList(List(int_b, str_b))
       val list_c = new BEncodedList(List(int_c, str_c))
-      val map_a = new BEncodedMap(Map("a" -> str_a))
-      val map_b = new BEncodedMap(Map("a" -> str_b))
-      val map_c = new BEncodedMap(Map("c" -> str_c))
+      val map_a = new BEncodedMap(ListMap("a" -> str_a))
+      val map_b = new BEncodedMap(ListMap("a" -> str_b))
+      val map_c = new BEncodedMap(ListMap("c" -> str_c))
     }
 
   test("BEncodedInt equals method works") {
@@ -159,7 +160,7 @@ class BEncodedItemTest extends FunSuite with Matchers {
 
   test("BEncodedMap serialize works for a nested dictionary") {
     val f = fixture
-    val d = BEncodedMap(Map("A" -> f.map_c))
+    val d = BEncodedMap(ListMap("A" -> f.map_c))
     d.serialize should be (ByteString("d1:Ad1:c1:bee"))
   }
 
@@ -194,7 +195,7 @@ class BEncodedItemTest extends FunSuite with Matchers {
   test("serialization succeeds for a highly nested structure") {
     val f = fixture
     val l = BEncodedList(List(f.int_a, f.str_a, f.map_a))
-    val d = BEncodedMap(Map("a" -> l, "b" -> f.list_a))
+    val d = BEncodedMap(ListMap("a" -> l, "b" -> f.list_a))
     d.serialize should be (ByteString("d1:ali1e1:ad1:a1:aee1:bli1e1:aee"))
   }
 }

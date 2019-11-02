@@ -23,8 +23,8 @@ object TorrentActorFactory {
       MetaInfo.apply(metainfoString),
       tcpManager,
       httpManager,
-      TrackerActor.props _,
-      Peer.props _)
+      TrackerActor.props,
+      Peer.props)
     )
   }
 }

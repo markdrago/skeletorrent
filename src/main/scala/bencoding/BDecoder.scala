@@ -2,6 +2,7 @@ package bencoding
 
 import akka.util.ByteString
 import items._
+import scala.collection.immutable.ListMap
 
 class BDecoder {
   /**
@@ -71,7 +72,7 @@ class BDecoder {
    */
   def decodeMap(encoded: ByteString): BEncodedMap = {
     require(encoded(0) == 'd'.toByte)
-    var accumulator:Map[String, BEncodedItem] = Map.empty
+    var accumulator:ListMap[String, BEncodedItem] = ListMap.empty
 
     var todecode = encoded.drop(1)
     while (todecode(0) != 'e'.toByte) {
@@ -85,7 +86,7 @@ class BDecoder {
 
       val value = decodeItem(todecode)
       todecode = todecode.drop(value.encodedLength)
-      accumulator = accumulator + (key.toString -> value)
+      accumulator = accumulator + ((key.toString -> value))
     }
 
     new BEncodedMap(accumulator)

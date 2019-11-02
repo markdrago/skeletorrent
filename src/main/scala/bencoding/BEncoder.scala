@@ -2,6 +2,7 @@ package bencoding
 
 import akka.util.ByteString
 import items._
+import scala.collection.immutable.ListMap
 
 class BEncoder {
   def encodeList(list: Seq[Any]): BEncodedItem = {
@@ -9,13 +10,14 @@ class BEncoder {
   }
 
   def encodeMap(m: Map[String, _]): BEncodedMap = {
-    new BEncodedMap(
-      m.map(
-        (p: (String, Any)) => {
-          (p._1, encodeItem(p._2))
-        }
-      ).toMap
+    var listMap = new ListMap[String, BEncodedItem]()
+
+    m.foreach(
+      (p: (String, Any)) => {
+        listMap = listMap + ((p._1, encodeItem(p._2)))
+      }
     )
+    new BEncodedMap(listMap)
   }
 
   def encodeItem(i: Any): BEncodedItem = {
